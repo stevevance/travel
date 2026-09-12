@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
+<title>Rotterdam, Sunday plan</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --ink:#1d2b26;
+    --paper:#f6f3ec;
+    --canal:#2f5d5a;
+    --canal-light:#dce8e6;
+    --sand:#dcae6b;
+    --sand-deep:#b9822f;
+    --line:#c9c1ae;
+    --white:#fffdf8;
+    --optional:#8a6fae;
+    --optional-light:#e9e2f2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    line-height:1.5;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:40px 24px 80px;}
+
+  header{margin-bottom:8px;}
+  .kicker{
+    font-family:Georgia,serif;
+    font-style:italic;
+    color:var(--canal);
+    font-size:0.95rem;
+    margin:0 0 6px;
+  }
+  h1{
+    font-size:2.5rem;
+    margin:0 0 6px;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    color:#5a5346;
+    font-size:1.05rem;
+    max-width:60ch;
+    margin:0 0 28px;
+  }
+
+  .legend-strip{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    align-items:center;
+    padding:12px 16px;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:4px;
+    margin-bottom:28px;
+    font-size:0.9rem;
+    color:#4a463c;
+  }
+  .legend-item{display:flex;align-items:center;gap:8px;}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;flex:none;}
+  .dot.walk{background:var(--canal);}
+  .dot.transit{background:var(--sand-deep);}
+  .dot.optional{background:var(--optional);}
+
+  #map{
+    width:100%;
+    height:420px;
+    border-radius:4px;
+    border:1px solid var(--line);
+    margin-bottom:36px;
+    filter:saturate(0.85);
+  }
+
+  .timeline{
+    position:relative;
+    padding-left:38px;
+    border-left:2px solid var(--canal-light);
+    margin-left:6px;
+  }
+  .stop{
+    position:relative;
+    padding-bottom:34px;
+  }
+  .stop:last-child{padding-bottom:0;}
+  .stop::before{
+    content:'';
+    position:absolute;
+    left:-45px;
+    top:4px;
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background:var(--white);
+    border:3px solid var(--canal);
+  }
+  .stop.transit::before{
+    border-color:var(--sand-deep);
+    background:var(--sand-deep);
+  }
+  .stop.optional::before{
+    border-color:var(--optional);
+    background:var(--white);
+    border-style:dashed;
+  }
+  .stop.transit{
+    background:var(--canal-light);
+    border-radius:4px;
+    padding:14px 18px;
+    margin-left:-18px;
+  }
+  .stop.transit::before{left:-27px;}
+  .stop.optional{
+    background:var(--optional-light);
+    border-radius:4px;
+    padding:14px 18px;
+    margin-left:-18px;
+    border:1px dashed var(--optional);
+  }
+  .stop.optional::before{left:-45px;}
+
+  .stop-time{
+    font-variant-numeric:tabular-nums;
+    color:var(--sand-deep);
+    font-size:0.85rem;
+    letter-spacing:0.02em;
+    margin-bottom:2px;
+  }
+  .stop.transit .stop-time{color:var(--canal);}
+  .stop.optional .stop-time{color:var(--optional);}
+  .stop-name{
+    font-size:1.25rem;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .stop.transit .stop-name{font-size:1.05rem;font-style:italic;font-weight:500;color:var(--canal);}
+  .stop.optional .stop-name{color:var(--optional);}
+  .stop.optional .stop-name::after{
+    content:'optional';
+    font-size:0.68rem;
+    font-weight:600;
+    font-style:normal;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color:var(--white);
+    background:var(--optional);
+    padding:2px 7px;
+    border-radius:3px;
+    margin-left:10px;
+    vertical-align:middle;
+  }
+  .stop-blurb{
+    color:#4a463c;
+    font-size:0.98rem;
+    max-width:56ch;
+  }
+
+  .footnote{
+    margin-top:8px;
+    padding:14px 18px;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-left:3px solid var(--sand-deep);
+    border-radius:4px;
+    font-size:0.92rem;
+    color:#4a463c;
+  }
+  .footnote strong{color:var(--ink);}
+
+  footer{
+    margin-top:40px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    font-size:0.85rem;
+    color:#8a8474;
+  }
+
+  .leaflet-tooltip.stop-tooltip{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:3px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.18);
+    font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    font-size:0.78rem;
+    padding:3px 8px;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  .leaflet-tooltip.stop-tooltip.transit{
+    color:var(--sand-deep);
+    font-style:italic;
+  }
+  .leaflet-tooltip.stop-tooltip.walk{
+    color:var(--canal);
+  }
+  .leaflet-tooltip.stop-tooltip.optional{
+    color:var(--optional);
+    font-style:italic;
+  }
+  .leaflet-tooltip.stop-tooltip.home{
+    color:#b5573f;
+    font-weight:600;
+  }
+  .leaflet-tooltip-top.stop-tooltip::before{
+    border-top-color:var(--line);
+  }
+
+  @media (max-width:560px){
+    h1{font-size:2rem;}
+    .wrap{padding:28px 16px 60px;}
+    #map{height:320px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="kicker">Sunday in Rotterdam, starting from [redacted]</p>
+    <h1>Brunch, cheese, and Katendrecht</h1>
+    <p class="subtitle">From the apartment north to Oasis, down through the centre, out to Coolhaven, ending across the river at Fenix. Three stops are optional depending on time and energy.</p>
+  </header>
+
+  <div class="legend-strip">
+    <div class="legend-item"><span class="dot" style="background:#b5573f;"></span> Starting point</div>
+    <div class="legend-item"><span class="dot walk"></span> Sight, on foot from the last stop</div>
+    <div class="legend-item"><span class="dot transit"></span> Travel leg, by tram/metro or water taxi</div>
+    <div class="legend-item"><span class="dot optional"></span> Optional &mdash; keep or skip</div>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="timeline" id="timeline"></div>
+
+  <div class="footnote">
+    <strong>Meijer &amp; Blessing</strong> (hobby shop) is closed Sundays &mdash; open Monday 10:00&ndash;17:30. Fold it into Monday's plan, or skip it this trip.<br><br>
+    <strong>GEB building:</strong> the ground-floor self-guided route is step-free, but the observation deck ("kraaiennest") is up two flights of stairs with no elevator.<br><br>
+    <strong>Justus van Effencomplex:</strong> a further trip west (Spangen), but explicitly wheelchair/rollator accessible &mdash; an elevator is available, just ask the host or resident guide.
+  </div>
+
+  <footer>Map data &copy; OpenStreetMap contributors</footer>
+</div>
+
+<script>
+const stops = [
+  {
+    type: 'transit',
+    time: '09:45',
+    name: 'Wilgenlei apartment \u2192 Oasis',
+    blurb: 'Tram 8 stops at Wilgenlei, ~5 min walk from the apartment, and runs straight toward the centre \u2014 roughly 10\u201315 min riding to Oasis.',
+    lat: 52.0, lon: 4.0,
+    skipMarker: true
+  },
+  {
+    type: 'walk',
+    time: '10:00',
+    name: 'Brunch at Oasis',
+    blurb: 'Noordsingel 39. Open 9:00\u201317:00 Sunday. Middle Eastern-inspired brunch, well reviewed.',
+    lat: 51.93012, lon: 4.48053,
+    mapLabel: 'Oasis'
+  },
+  {
+    type: 'transit',
+    time: '11:15',
+    name: 'Travel to city centre',
+    blurb: 'Tram from the Noordsingel stop to the city centre, ~20\u201325 min including a transfer near Rotterdam Centraal.',
+    lat: 52.0, lon: 4.0,
+    skipMarker: true
+  },
+  {
+    type: 'walk',
+    time: '12:00',
+    name: 'De Kaashoeve cheese shop',
+    blurb: 'Oude Binnenweg 129b. Opens at 12:00 on Sundays (closes 17:00) \u2014 timed to arrive right as it opens.',
+    lat: 51.91733, lon: 4.47355,
+    mapLabel: 'De Kaashoeve'
+  },
+  {
+    type: 'optional',
+    time: '13:00',
+    name: 'Maritime Museum',
+    blurb: 'Leuvehaven 1, a ~5 min walk from Kaashoeve, open 11:00\u201317:00 Sunday. Keep or skip depending on time and energy.',
+    lat: 51.91756, lon: 4.48223,
+    mapLabel: 'Maritime Museum'
+  },
+  {
+    type: 'optional',
+    time: '13:45',
+    name: 'Batavier House',
+    blurb: 'Pieter de Hoochweg 108, near Coolhaven, ~15 min tram/metro from the centre (also reachable via tram 8, same line as the morning leg). Art Deco staircase and neo-Renaissance style room in a 1921 building, now a music/arts incubator.',
+    lat: 51.90768, lon: 4.45919,
+    mapLabel: 'Batavier House'
+  },
+  {
+    type: 'optional',
+    time: '14:15',
+    name: 'GEB building observation deck',
+    blurb: 'Rochussenstraat 230, a ~5 min walk from Batavier House. Open Monumentendag weekend, 11:00\u201317:00. The view itself requires climbing two flights of stairs.',
+    lat: 51.91073, lon: 4.46115,
+    mapLabel: 'GEB building'
+  },
+  {
+    type: 'optional',
+    time: '15:00',
+    name: 'Justus van Effencomplex',
+    blurb: 'Justus van Effenstraat 4, Spangen (~2.1km west of GEB, ~10 min metro via Marconiplein). Open Sunday 13:00\u201318:00. Explicitly wheelchair/rollator accessible \u2014 elevator available, just ask the host.',
+    lat: 51.91603, lon: 4.43114,
+    mapLabel: 'Justus van Effencomplex'
+  },
+  {
+    type: 'transit',
+    time: '16:00',
+    name: 'Water taxi to Katendrecht',
+    blurb: 'Cross the river via water taxi or Erasmusbrug \u2014 a short, mostly-seated way over.',
+    lat: 52.0, lon: 4.0,
+    skipMarker: true
+  },
+  {
+    type: 'walk',
+    time: '16:00',
+    name: 'Fenix Museum',
+    blurb: 'Open 10:00\u201317:00 Sunday, Katendrecht.',
+    lat: 51.90215, lon: 4.48419,
+    mapLabel: 'Fenix Museum'
+  }
+];
+
+const timelineEl = document.getElementById('timeline');
+stops.forEach(s => {
+  const div = document.createElement('div');
+  div.className = 'stop ' + s.type;
+  div.innerHTML = `
+    <div class="stop-time">${s.time}</div>
+    <div class="stop-name">${s.name}</div>
+    <div class="stop-blurb">${s.blurb}</div>
+  `;
+  timelineEl.appendChild(div);
+});
+
+const map = L.map('map', { scrollWheelZoom: false }).setView([51.915, 4.47], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors',
+  maxZoom: 19
+}).addTo(map);
+
+const colorFor = (type) => type === 'transit' ? '#b9822f' : (type === 'optional' ? '#8a6fae' : '#2f5d5a');
+
+const canalIcon = (color, dashed) => L.divIcon({
+  className: '',
+  html: `<div style="width:16px;height:16px;border-radius:50%;background:${dashed ? '#fffdf8' : color};border:2.5px ${dashed ? 'dashed' : 'solid'} ${color};box-shadow:0 1px 3px rgba(0,0,0,0.35);"></div>`,
+  iconSize: [16,16],
+  iconAnchor: [8,8]
+});
+
+const routePoints = [];
+const bounds = [];
+
+stops.forEach(s => {
+  if (s.skipMarker) return;
+  const color = colorFor(s.type);
+  const marker = L.marker([s.lat, s.lon], { icon: canalIcon(color, s.type === 'optional') }).addTo(map);
+  marker.bindTooltip(s.mapLabel + (s.type === 'optional' ? ' (optional)' : ''), {
+    permanent: true,
+    direction: 'top',
+    offset: [0, -10],
+    className: 'stop-tooltip ' + s.type
+  });
+  routePoints.push([s.lat, s.lon]);
+  bounds.push([s.lat, s.lon]);
+});
+
+L.polyline(routePoints, {
+  color: '#2f5d5a',
+  weight: 2,
+  opacity: 0.55,
+  dashArray: '1,8',
+  lineCap: 'round'
+}).addTo(map);
+
+const homeIcon = L.divIcon({
+  className: '',
+  html: `<div style="width:18px;height:18px;border-radius:50%;background:#b5573f;border:2.5px solid #fffdf8;box-shadow:0 1px 3px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;"></div>`,
+  iconSize: [18,18],
+  iconAnchor: [9,9]
+});
+const homeMarker = L.marker([51.00000, 4.00000], { icon: homeIcon }).addTo(map);
+homeMarker.bindTooltip('[redacted] (apartment)', {
+  permanent: true,
+  direction: 'top',
+  offset: [0, -11],
+  className: 'stop-tooltip home'
+});
+bounds.push([51.00000, 4.00000]);
+
+map.fitBounds(bounds, { padding: [30,30] });
+</script>
+</body>
+</html>
