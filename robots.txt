@@ -1,0 +1,3 @@
+# Personal travel pages: keep the whole site out of search engines.
+User-agent: *
+Disallow: /

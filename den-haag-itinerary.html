@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>The Hague, day plan</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --ink:#1d2b26;
+    --paper:#f6f3ec;
+    --canal:#2f5d5a;
+    --canal-light:#dce8e6;
+    --sand:#dcae6b;
+    --sand-deep:#b9822f;
+    --line:#c9c1ae;
+    --white:#fffdf8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    line-height:1.5;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:40px 24px 80px;}
+
+  header{margin-bottom:8px;}
+  .kicker{
+    font-family:Georgia,serif;
+    font-style:italic;
+    color:var(--canal);
+    font-size:0.95rem;
+    margin:0 0 6px;
+  }
+  h1{
+    font-size:2.5rem;
+    margin:0 0 6px;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    color:#5a5346;
+    font-size:1.05rem;
+    max-width:60ch;
+    margin:0 0 28px;
+  }
+
+  .legend-strip{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    align-items:center;
+    padding:12px 16px;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:4px;
+    margin-bottom:28px;
+    font-size:0.9rem;
+    color:#4a463c;
+  }
+  .legend-item{display:flex;align-items:center;gap:8px;}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;flex:none;}
+  .dot.walk{background:var(--canal);}
+  .dot.transit{background:var(--sand-deep);}
+
+  #map{
+    width:100%;
+    height:420px;
+    border-radius:4px;
+    border:1px solid var(--line);
+    margin-bottom:36px;
+    filter:saturate(0.85);
+  }
+
+  .timeline{
+    position:relative;
+    padding-left:38px;
+    border-left:2px solid var(--canal-light);
+    margin-left:6px;
+  }
+  .stop{
+    position:relative;
+    padding-bottom:34px;
+  }
+  .stop:last-child{padding-bottom:0;}
+  .stop::before{
+    content:'';
+    position:absolute;
+    left:-45px;
+    top:4px;
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background:var(--white);
+    border:3px solid var(--canal);
+  }
+  .stop.transit::before{
+    border-color:var(--sand-deep);
+    background:var(--sand-deep);
+  }
+  .stop.transit{
+    background:var(--canal-light);
+    border-radius:4px;
+    padding:14px 18px;
+    margin-left:-18px;
+  }
+  .stop.transit::before{left:-27px;}
+
+  .stop-time{
+    font-variant-numeric:tabular-nums;
+    color:var(--sand-deep);
+    font-size:0.85rem;
+    letter-spacing:0.02em;
+    margin-bottom:2px;
+  }
+  .stop.transit .stop-time{color:var(--canal);}
+  .stop-name{
+    font-size:1.25rem;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .stop.transit .stop-name{font-size:1.05rem;font-style:italic;font-weight:500;color:var(--canal);}
+  .stop-blurb{
+    color:#4a463c;
+    font-size:0.98rem;
+    max-width:56ch;
+  }
+
+  footer{
+    margin-top:40px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    font-size:0.85rem;
+    color:#8a8474;
+  }
+
+  .leaflet-tooltip.stop-tooltip{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:3px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.18);
+    font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    font-size:0.78rem;
+    padding:3px 8px;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  .leaflet-tooltip.stop-tooltip.transit{
+    color:var(--sand-deep);
+    font-style:italic;
+  }
+  .leaflet-tooltip.stop-tooltip.walk{
+    color:var(--canal);
+  }
+  .leaflet-tooltip-top.stop-tooltip::before{
+    border-top-color:var(--line);
+  }
+
+  @media (max-width:560px){
+    h1{font-size:2rem;}
+    .wrap{padding:28px 16px 60px;}
+    #map{height:320px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="kicker">Rotterdam &rarr; The Hague, on foot and by rail</p>
+    <h1>A day in Den Haag</h1>
+    <p class="subtitle">Starting from Wilgenlei, Rotterdam. Ordered to keep walking short between stops, with one longer transit hop out to the coast.</p>
+  </header>
+
+  <div class="legend-strip">
+    <div class="legend-item"><span class="dot walk"></span> Sight, on foot from the last stop</div>
+    <div class="legend-item"><span class="dot transit"></span> Travel leg, by metro or tram</div>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="timeline" id="timeline"></div>
+
+  <footer>Map data &copy; OpenStreetMap contributors</footer>
+</div>
+
+<script>
+const stops = [
+  {
+    type: 'transit',
+    time: '09:30',
+    name: 'Wilgenlei \u2192 Den Haag Centraal',
+    blurb: '8\u20139 min walk to Meijersplein/Airport metro, then a direct Line E ride \u2014 25\u201326 min, no transfer.',
+    lat: 51.9557, lon: 4.4621,
+    mapLabel: 'Meijersplein / Airport metro'
+  },
+  {
+    type: 'walk',
+    time: '10:15',
+    name: 'Museum ship Hendrina Johanna',
+    blurb: 'Bierkade 19 \u2014 closest sight to the station (~10 min walk). View the 1905 ship from the jetty, sit at Haagse Hop caf\u00e9 alongside.',
+    lat: 52.07495, lon: 4.31894,
+    mapLabel: 'Museum ship Hendrina Johanna'
+  },
+  {
+    type: 'walk',
+    time: '11:00',
+    name: 'Shopping at Grote Markt',
+    blurb: '~9 min walk from the ship. Browse and rest at the cafes on the square.',
+    lat: 52.07574, lon: 4.30876,
+    mapLabel: 'Grote Markt'
+  },
+  {
+    type: 'walk',
+    time: '12:00',
+    name: 'Historic tram tour from Kerkplein',
+    blurb: '~3 min walk, next door to Grote Markt. Seated ~30\u201345 min loop through the city, runs every 15 min, 11:00\u201316:45.',
+    lat: 52.07743, lon: 4.30714,
+    mapLabel: 'Kerkplein (Grote Kerk)'
+  },
+  {
+    type: 'transit',
+    time: '13:15',
+    name: 'Tram to Scheveningen',
+    blurb: '~11\u201315 min tram ride (line 1 or 9) from the city centre out to the coast.',
+    lat: 52.0, lon: 4.0,
+    skipMarker: true
+  },
+  {
+    type: 'walk',
+    time: '13:30',
+    name: 'Lunch at Foodhall Scheveningen',
+    blurb: 'Strandweg 161, right on the boulevard near the beach. Seated food court with many cuisines to choose from, good views onto the beach, open from 12:00.',
+    lat: 52.11663, lon: 4.28577,
+    mapLabel: 'Foodhall Scheveningen'
+  },
+  {
+    type: 'walk',
+    time: '14:45',
+    name: 'Scheveningen beach & boulevard',
+    blurb: 'Flat boulevard, cafes every few hundred metres for rest breaks. End the day here.',
+    lat: 52.11535, lon: 4.28347,
+    mapLabel: 'Scheveningen boulevard'
+  },
+  {
+    type: 'transit',
+    time: '16:00',
+    name: 'Den Haag \u2192 Wilgenlei',
+    blurb: 'Tram back to Den Haag Centraal (~15 min), Line E metro direct to Meijersplein/Airport (~25\u201326 min), walk to Wilgenlei (~8\u20139 min).',
+    lat: 52.08108, lon: 4.32412,
+    mapLabel: 'Den Haag Centraal'
+  }
+];
+
+const timelineEl = document.getElementById('timeline');
+stops.forEach(s => {
+  const div = document.createElement('div');
+  div.className = 'stop ' + s.type;
+  div.innerHTML = `
+    <div class="stop-time">${s.time}</div>
+    <div class="stop-name">${s.name}</div>
+    <div class="stop-blurb">${s.blurb}</div>
+  `;
+  timelineEl.appendChild(div);
+});
+
+const map = L.map('map', { scrollWheelZoom: false }).setView([52.02, 4.35], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors',
+  maxZoom: 19
+}).addTo(map);
+
+const canalIcon = (color) => L.divIcon({
+  className: '',
+  html: `<div style="width:16px;height:16px;border-radius:50%;background:${color};border:2.5px solid #fffdf8;box-shadow:0 1px 3px rgba(0,0,0,0.35);"></div>`,
+  iconSize: [16,16],
+  iconAnchor: [8,8]
+});
+
+const routePoints = [];
+const bounds = [];
+
+stops.forEach(s => {
+  if (s.skipMarker) return;
+  const color = s.type === 'transit' ? '#b9822f' : '#2f5d5a';
+  const marker = L.marker([s.lat, s.lon], { icon: canalIcon(color) }).addTo(map);
+  marker.bindTooltip(s.mapLabel, {
+    permanent: true,
+    direction: 'top',
+    offset: [0, -10],
+    className: 'stop-tooltip ' + s.type
+  });
+  routePoints.push([s.lat, s.lon]);
+  bounds.push([s.lat, s.lon]);
+});
+
+L.polyline(routePoints, {
+  color: '#2f5d5a',
+  weight: 2,
+  opacity: 0.55,
+  dashArray: '1,8',
+  lineCap: 'round'
+}).addTo(map);
+
+map.fitBounds(bounds, { padding: [30,30] });
+</script>
+</body>
+</html>
