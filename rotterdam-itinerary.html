@@ -229,7 +229,7 @@
   <header>
     <p class="kicker">Sunday in Rotterdam, starting from Schiebroek</p>
     <h1>Brunch, cheese, and Katendrecht</h1>
-    <p class="subtitle">From the apartment north to Oasis, down through the centre, out to Coolhaven, ending across the river at Fenix. Three stops are optional depending on time and energy.</p>
+    <p class="subtitle">From Schiebroek north to Oasis, down through the centre, out to Coolhaven, ending across the river at Fenix. Three stops are optional depending on time and energy.</p>
   </header>
 
   <div class="legend-strip">
@@ -257,8 +257,8 @@ const stops = [
   {
     type: 'transit',
     time: '09:45',
-    name: 'Wilgenlei apartment \u2192 Oasis',
-    blurb: 'Tram 8 stops at Wilgenlei, ~5 min walk from the apartment, and runs straight toward the centre \u2014 roughly 10\u201315 min riding to Oasis.',
+    name: 'Schiebroek \u2192 Oasis',
+    blurb: 'Tram 8 stops nearby and runs straight toward the centre \u2014 roughly 10\u201315 min riding to Oasis.',
     lat: 52.0, lon: 4.0,
     skipMarker: true
   },
@@ -388,20 +388,6 @@ L.polyline(routePoints, {
   lineCap: 'round'
 }).addTo(map);
 
-const homeIcon = L.divIcon({
-  className: '',
-  html: `<div style="width:18px;height:18px;border-radius:50%;background:#b5573f;border:2.5px solid #fffdf8;box-shadow:0 1px 3px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;"></div>`,
-  iconSize: [18,18],
-  iconAnchor: [9,9]
-});
-const homeMarker = L.marker([51.00000, 4.00000], { icon: homeIcon }).addTo(map);
-homeMarker.bindTooltip('[redacted] (apartment)', {
-  permanent: true,
-  direction: 'top',
-  offset: [0, -11],
-  className: 'stop-tooltip home'
-});
-bounds.push([51.00000, 4.00000]);
 
 map.fitBounds(bounds, { padding: [30,30] });
 </script>
