@@ -13,11 +13,13 @@
     --ink-soft:#5a5346;
     --paper:#f6f3ec;
     --line:#c9c1ae;
-    /* Categorical by MODE. Three slots, validated all-pairs on a light
+    /* Categorical by MODE, shared by every map in this set so a mode keeps the
+       same color from one page to the next. Validated all-pairs on a light
        surface; line identity rides on the numbered badges, not on hue. */
     --metro:#2a78d6;
     --tram:#eb6834;
     --train:#1baf7a;
+    --bike:#7d4bc2;
     --walk:#5f5b54;
   }
   *{box-sizing:border-box;}
@@ -57,6 +59,7 @@
   .sw.metro{border-color:var(--metro);}
   .sw.tram{border-color:var(--tram);}
   .sw.train{border-color:var(--train);}
+  .sw.bike{border-color:var(--bike);}
   .sw.walk{border-top-style:dotted;border-top-width:4px;border-color:var(--walk);}
 
   ol{list-style:none;padding:0;margin:0;font-size:0.85rem;}
@@ -77,8 +80,26 @@
   ol li.metro::before{border-color:var(--metro);}
   ol li.tram::before{border-color:var(--tram);}
   ol li.train::before{border-color:var(--train);}
+  ol li.bike::before{border-color:var(--bike);}
   ol li.walk::before{border-color:var(--walk);}
   .via{display:block;color:var(--ink-soft);font-size:0.78rem;}
+
+  /* Monoline glyphs saying what each stop was for. Drawn as SVG, not emoji,
+     so they look the same in a screenshot as they do in a browser. */
+  .ico{
+    width:15px;height:15px;flex:none;
+    vertical-align:-2px;margin-right:5px;
+    fill:none;stroke:currentColor;stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round;
+  }
+  ol li .ico{color:#2f5d5a;}
+  /* Stops that exist only to change vehicles stay quiet, so the eye lands on
+     the places we actually went. */
+  ol li .ico.transit{color:var(--ink-soft);opacity:0.5;}
+  .iconnote{
+    margin:0 0 10px;font-size:0.75rem;line-height:1.35;
+    color:var(--ink-soft);font-style:italic;
+  }
 
   @media (max-width: 700px){
     .panel{
@@ -99,6 +120,7 @@
   }
 
   .stopdot{
+    position:relative;
     width:26px;height:26px;border-radius:50%;
     background:#fff;
     border:3px solid var(--ink-soft);
@@ -111,7 +133,19 @@
   .stopdot.metro{border-color:var(--metro);}
   .stopdot.tram{border-color:var(--tram);}
   .stopdot.train{border-color:var(--train);}
+  .stopdot.bike{border-color:var(--bike);}
   .stopdot.walk{border-color:var(--walk);}
+
+  /* A small glyph clipped to the marker, so the map reads on its own when the
+     side panel is cropped away for an inset or a screenshot. */
+  .stopdot .pin-ico{
+    position:absolute;right:-8px;top:-8px;
+    width:17px;height:17px;border-radius:50%;
+    background:#fff;border:1px solid var(--line);
+    box-shadow:0 1px 3px rgba(0,0,0,0.25);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .stopdot .pin-ico .ico{width:11px;height:11px;margin:0;stroke-width:2;color:#2f5d5a;}
 
   .maplibregl-popup-content{
     font-family:'Iowan Old Style',Palatino,Georgia,serif;
@@ -141,6 +175,7 @@
     <div class="lg"><span class="sw train"></span> NS Intercity</div>
     <div class="lg"><span class="sw walk"></span> On foot</div>
   </div>
+  <p class="iconnote">Icons say what each stop was for; faded glyphs are transit stops we only passed through.</p>
   <ol id="key"></ol>
 </div>
 <script>
@@ -148,6 +183,47 @@ const LINES = {"type":"FeatureCollection","features":[{"type":"Feature","propert
 const STOPS = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{"n":1,"name":"Meijersplein","arrive":"metro","key":"meijersplein","note":"Metro E station (RandstadRail), Rotterdam Schiebroek"},"geometry":{"type":"Point","coordinates":[4.46268,51.95585]}},{"type":"Feature","properties":{"n":2,"name":"Den Haag Centraal","arrive":"metro","key":"denhaag_cs","note":""},"geometry":{"type":"Point","coordinates":[4.32455,52.08084]}},{"type":"Feature","properties":{"n":3,"name":"Bierkade","arrive":"tram","key":"bierkade","note":""},"geometry":{"type":"Point","coordinates":[4.3182,52.07452]}},{"type":"Feature","properties":{"n":4,"name":"Kerkplein","arrive":"walk","key":"kerkplein","note":""},"geometry":{"type":"Point","coordinates":[4.30693,52.07772]}},{"type":"Feature","properties":{"n":5,"name":"HTM transport museum","arrive":"tram","key":"ov_museum","note":""},"geometry":{"type":"Point","coordinates":[4.30914,52.06223]}},{"type":"Feature","properties":{"n":6,"name":"Kurhaus","arrive":"tram","key":"kurhaus","note":""},"geometry":{"type":"Point","coordinates":[4.28367,52.11327]}},{"type":"Feature","properties":{"n":7,"name":"Summertime","arrive":"walk","key":"summertime","note":""},"geometry":{"type":"Point","coordinates":[4.28005,52.11344]}},{"type":"Feature","properties":{"n":8,"name":"Malieveld","arrive":"tram","key":"malieveld","note":""},"geometry":{"type":"Point","coordinates":[4.31737,52.08363]}},{"type":"Feature","properties":{"n":9,"name":"Koekamp deer park","arrive":"walk","key":"koekamp","note":""},"geometry":{"type":"Point","coordinates":[4.3224,52.08391]}},{"type":"Feature","properties":{"n":10,"name":"Binnenhof","arrive":"walk","key":"binnenhof","note":""},"geometry":{"type":"Point","coordinates":[4.31237,52.07933]}},{"type":"Feature","properties":{"n":11,"name":"Grote Markt","arrive":"walk","key":"grote_markt","note":""},"geometry":{"type":"Point","coordinates":[4.30912,52.07548]}},{"type":"Feature","properties":{"n":12,"name":"Prinsenhof","arrive":"tram","key":"prinsenhof","note":""},"geometry":{"type":"Point","coordinates":[4.35338,52.011725]}},{"type":"Feature","properties":{"n":13,"name":"Lakila","arrive":"walk","key":"lakila","note":""},"geometry":{"type":"Point","coordinates":[4.36099,52.01287]}},{"type":"Feature","properties":{"n":14,"name":"Delft station","arrive":"walk","key":"delft_station","note":""},"geometry":{"type":"Point","coordinates":[4.35658,52.00755]}},{"type":"Feature","properties":{"n":15,"name":"Rotterdam Centraal","arrive":"train","key":"rotterdam_cs","note":""},"geometry":{"type":"Point","coordinates":[4.46893,51.92502]}},{"type":"Feature","properties":{"n":16,"name":"Wilgenlei","arrive":"tram","key":"wilgenlei","note":""},"geometry":{"type":"Point","coordinates":[4.47279,51.95519]}}]};
 
 const COLOR = {metro:'#2a78d6', tram:'#eb6834', train:'#1baf7a', walk:'#5f5b54'};
+
+/* Monoline glyphs, one 24x24 viewBox each, stroked in currentColor so the
+   same path serves the list, the popup and the marker at three sizes. */
+const ICON_PATHS = {
+  museum:  '<path d="M3 9.5 12 4l9 5.5"/><path d="M5.5 10v8M9.5 10v8M14.5 10v8M18.5 10v8"/><path d="M2.5 18.5h19"/>',
+  church:  '<path d="M12 2v4M10.2 3.7h3.6"/><path d="M6 21V10l6-4 6 4v11"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/>',
+  ship:    '<path d="M5.5 13.5V7.5h6.5l3.2 6"/><path d="M9 7.5V4"/><path d="M2.5 14.5h19L19 20H5z"/>',
+  landmark:'<path d="M12 2.5c2.6 1.7 4 3.7 4 5.5H8c0-1.8 1.4-3.8 4-5.5z"/><path d="M6.5 8.5h11v9.5h-11z"/><path d="M4 18.5h16v2.5H4z"/><path d="M10.2 18.5v-4.3a1.8 1.8 0 0 1 3.6 0v4.3"/>',
+  drinks:  '<path d="M3.5 4.5h17L12 13z"/><path d="M12 13v7"/><path d="M8 20.5h8"/>',
+  park:    '<path d="M12 3 5.8 12.5h12.4z"/><path d="M12 8 7.6 16.5h8.8z"/><path d="M12 16.5V21"/>',
+  deer:    '<path d="M12 10.2c1.9 0 3.3 1.5 3.3 3.4 0 2.7-1.5 6.2-3.3 6.2s-3.3-3.5-3.3-6.2c0-1.9 1.4-3.4 3.3-3.4z"/><path d="M9.7 10.4 8 7.3 5.4 7.6M8 7.3l-.4-2.6"/><path d="M14.3 10.4 16 7.3l2.6.3M16 7.3l.4-2.6"/>',
+  castle:  '<path d="M4.5 21V10L7 7l2.5 3v11"/><path d="M14.5 21V10L17 7l2.5 3v11"/><path d="M9.5 21v-8L12 10.2 14.5 13v8"/><path d="M2.5 21h19"/>',
+  shops:   '<path d="M5 8h14l-1.1 12.5H6.1z"/><path d="M9 8V5.8a3 3 0 0 1 6 0V8"/>',
+  food:    '<path d="M6.5 3v5.5a2.4 2.4 0 0 0 4.8 0V3"/><path d="M8.9 9v12"/><path d="M17.3 3c1.5 1.6 2 4.2 1.6 7.8h-3.2C15.3 7.2 15.8 4.6 17.3 3z"/><path d="M17.3 10.8V21"/>',
+  train:   '<rect x="6" y="3" width="12" height="13" rx="3.2"/><path d="M6 11h12"/><path d="M9.4 13.6h.01M14.6 13.6h.01"/><path d="M8.2 16 6 21M15.8 16 18 21"/>',
+  tram:    '<rect x="6" y="4" width="12" height="12.5" rx="2.6"/><path d="M6 11h12"/><path d="M12 4V1.8"/><path d="M9.4 13.8h.01M14.6 13.8h.01"/><path d="M8.2 16.5 6 21M15.8 16.5 18 21"/>'
+};
+const ICON_LABEL = {
+  museum:'Museum', church:'Church', ship:'Museum ship', landmark:'Landmark',
+  drinks:'Drinks', park:'Park', deer:'Deer park', castle:'Historic site',
+  shops:'Shops and cafes', food:'Meal', train:'Rail station', tram:'Tram stop'
+};
+const TRANSIT_ICONS = new Set(['train','tram']);
+
+/* What each stop was for, keyed the same way as STOPS. */
+const STOP_ICON = {
+  meijersplein:'train', denhaag_cs:'train', bierkade:'ship',   kerkplein:'church',
+  ov_museum:'museum',   kurhaus:'landmark', summertime:'drinks', malieveld:'park',
+  koekamp:'deer',       binnenhof:'castle', grote_markt:'shops', prinsenhof:'museum',
+  lakila:'food',        delft_station:'train', rotterdam_cs:'train', wilgenlei:'tram'
+};
+const iconFor = n => {
+  const f = STOPS.features.find(s => s.properties.n === n);
+  return f ? STOP_ICON[f.properties.key] : null;
+};
+const iconHTML = name => {
+  if (!name || !ICON_PATHS[name]) return '';
+  const cls = 'ico' + (TRANSIT_ICONS.has(name) ? ' transit' : '');
+  return '<svg class="' + cls + '" viewBox="0 0 24 24" role="img" aria-label="'
+         + ICON_LABEL[name] + '">' + ICON_PATHS[name] + '</svg>';
+};
 
 {
   /* nopanel drops the whole side panel (insets); nohead drops just its title,
@@ -213,13 +289,22 @@ map.on('load', () => {
   /* One numbered marker per stop, ringed in the color of how you arrived. */
   STOPS.features.forEach(f => {
     const p = f.properties;
+    const icon = STOP_ICON[p.key];
     const el = document.createElement('div');
     el.className = 'stopdot ' + p.arrive;
     el.textContent = p.n;
+    /* Only the places we went get a glyph on the map; transit stops would
+       just crowd the dense city-centre cluster. */
+    if (icon && !TRANSIT_ICONS.has(icon)) {
+      const badge = document.createElement('div');
+      badge.className = 'pin-ico';
+      badge.innerHTML = iconHTML(icon);
+      el.appendChild(badge);
+    }
     new maplibregl.Marker({element:el})
       .setLngLat(f.geometry.coordinates)
       .setPopup(new maplibregl.Popup({offset:16, closeButton:false})
-        .setHTML('<b>' + p.n + '. ' + p.name + '</b>'
+        .setHTML('<b>' + iconHTML(icon) + p.n + '. ' + p.name + '</b>'
                  + (p.note ? '<span>' + p.note + '</span>' : '')))
       .addTo(map);
   });
@@ -297,7 +382,8 @@ rows.forEach(r => {
   const li = document.createElement('li');
   li.className = r.mode;
   li.dataset.n = r.n;
-  li.innerHTML = r.name + (r.via ? '<span class="via">' + r.via + '</span>' : '');
+  li.innerHTML = iconHTML(iconFor(r.n)) + r.name
+                 + (r.via ? '<span class="via">' + r.via + '</span>' : '');
   key.appendChild(li);
 });
 </script>
