@@ -1,0 +1,6 @@
+# Regenerable caches, not sources: Overpass/Valhalla responses and tile scratch.
+*.pyc
+__pycache__/
+.venv/
+src/**/*.json
+src/**/tilecache/
