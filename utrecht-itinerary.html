@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
+<title>Utrecht, Monday plan</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --ink:#1d2b26;
+    --paper:#f6f3ec;
+    --canal:#2f5d5a;
+    --canal-light:#dce8e6;
+    --sand:#dcae6b;
+    --sand-deep:#b9822f;
+    --line:#c9c1ae;
+    --white:#fffdf8;
+    --optional:#8a6fae;
+    --optional-light:#e9e2f2;
+    --closed:#b5573f;
+    --closed-light:#f4e2dd;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    line-height:1.5;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:40px 24px 80px;}
+
+  header{margin-bottom:8px;}
+  .kicker{font-family:Georgia,serif;font-style:italic;color:var(--canal);font-size:0.95rem;margin:0 0 6px;}
+  h1{font-size:2.5rem;margin:0 0 6px;font-weight:600;letter-spacing:-0.01em;}
+  .subtitle{color:#5a5346;font-size:1.05rem;max-width:60ch;margin:0 0 28px;}
+
+  .alert{
+    padding:14px 18px;
+    background:var(--closed-light);
+    border:1px solid var(--closed);
+    border-left:4px solid var(--closed);
+    border-radius:4px;
+    margin-bottom:26px;
+    font-size:0.95rem;
+    color:#5a3a32;
+  }
+  .alert strong{color:var(--closed);}
+  .alert ul{margin:8px 0 0;padding-left:20px;}
+  .alert li{margin-bottom:4px;}
+
+  .legend-strip{
+    display:flex;gap:18px;flex-wrap:wrap;align-items:center;
+    padding:12px 16px;background:var(--white);border:1px solid var(--line);
+    border-radius:4px;margin-bottom:28px;font-size:0.9rem;color:#4a463c;
+  }
+  .legend-item{display:flex;align-items:center;gap:8px;}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;flex:none;}
+  .dot.walk{background:var(--canal);}
+  .dot.transit{background:var(--sand-deep);}
+  .dot.optional{background:var(--optional);}
+  .dot.closed{background:var(--closed);}
+
+  #map{
+    width:100%;height:440px;border-radius:4px;border:1px solid var(--line);
+    margin-bottom:36px;filter:saturate(0.85);
+  }
+
+  h2{
+    font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;
+    color:var(--canal);margin:42px 0 10px;
+  }
+
+  .timeline{position:relative;padding-left:38px;border-left:2px solid var(--canal-light);margin-left:6px;}
+  .stop{position:relative;padding-bottom:34px;}
+  .stop:last-child{padding-bottom:0;}
+  .stop::before{
+    content:'';position:absolute;left:-45px;top:4px;width:14px;height:14px;border-radius:50%;
+    background:var(--white);border:3px solid var(--canal);
+  }
+  .stop.transit::before{border-color:var(--sand-deep);background:var(--sand-deep);}
+  .stop.transit{background:var(--canal-light);border-radius:4px;padding:14px 18px;margin-left:-18px;}
+  .stop.transit::before{left:-27px;}
+  .stop.optional{
+    background:var(--optional-light);border-radius:4px;padding:14px 18px;margin-left:-18px;
+    border:1px dashed var(--optional);
+  }
+  .stop.optional::before{left:-45px;border-color:var(--optional);background:var(--white);border-style:dashed;}
+
+  .stop-time{
+    font-variant-numeric:tabular-nums;color:var(--sand-deep);font-size:0.85rem;
+    letter-spacing:0.02em;margin-bottom:2px;
+  }
+  .stop.transit .stop-time{color:var(--canal);}
+  .stop.optional .stop-time{color:var(--optional);}
+  .stop-name{font-size:1.25rem;font-weight:600;margin:0 0 4px;}
+  .stop.transit .stop-name{font-size:1.05rem;font-style:italic;font-weight:500;color:var(--canal);}
+  .stop.optional .stop-name{color:var(--optional);}
+  .stop.optional .stop-name::after{
+    content:'cut this if tired';font-size:0.68rem;font-weight:600;font-style:normal;
+    text-transform:uppercase;letter-spacing:0.04em;color:var(--white);background:var(--optional);
+    padding:2px 7px;border-radius:3px;margin-left:10px;vertical-align:middle;
+  }
+  .stop-blurb{color:#4a463c;font-size:0.98rem;max-width:58ch;}
+  .stop-blurb p{margin:0 0 8px;}
+  .meta{
+    font-size:0.84rem;color:#6f6857;margin-top:6px;font-style:italic;
+  }
+
+  .prose{max-width:64ch;color:#3e3a31;}
+  .prose p{margin:0 0 14px;}
+  .prose strong{color:var(--ink);}
+
+  .walltable{
+    width:100%;border-collapse:collapse;margin:14px 0 6px;font-size:0.92rem;
+    background:var(--white);border:1px solid var(--line);border-radius:4px;
+  }
+  .walltable th{
+    text-align:left;font-size:0.74rem;text-transform:uppercase;letter-spacing:0.07em;
+    color:var(--canal);border-bottom:1px solid var(--line);padding:9px 12px;font-weight:600;
+  }
+  .walltable td{padding:9px 12px;border-bottom:1px solid #eae5d9;vertical-align:top;color:#4a463c;}
+  .walltable tr:last-child td{border-bottom:none;}
+  .walltable td:first-child{white-space:nowrap;color:var(--ink);font-weight:600;}
+
+  .footnote{
+    margin-top:14px;padding:14px 18px;background:var(--white);border:1px solid var(--line);
+    border-left:3px solid var(--sand-deep);border-radius:4px;font-size:0.92rem;color:#4a463c;
+  }
+  .footnote strong{color:var(--ink);}
+
+  footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);font-size:0.85rem;color:#8a8474;}
+  footer a{color:#6f6857;}
+  footer ul{padding-left:18px;margin:8px 0 0;}
+  footer li{margin-bottom:3px;}
+
+  .leaflet-tooltip.stop-tooltip{
+    background:var(--white);border:1px solid var(--line);border-radius:3px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.18);
+    font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    font-size:0.78rem;padding:3px 8px;color:var(--ink);white-space:nowrap;
+  }
+  .leaflet-tooltip.stop-tooltip.transit{color:var(--sand-deep);font-style:italic;}
+  .leaflet-tooltip.stop-tooltip.walk{color:var(--canal);}
+  .leaflet-tooltip.stop-tooltip.closed{color:var(--closed);font-style:italic;}
+  .leaflet-tooltip-top.stop-tooltip::before{border-top-color:var(--line);}
+
+  @media (max-width:560px){
+    h1{font-size:2rem;}
+    .wrap{padding:28px 16px 60px;}
+    #map{height:340px;}
+    .walltable{font-size:0.85rem;}
+  }
+
+  .backlink{margin:0 0 14px;font-size:0.82rem;}
+  .backlink a{color:#2f5d5a;text-decoration:none;}
+  .backlink a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="backlink"><a href="./">&larr; All travel plans</a></p>
+  <header>
+    <p class="kicker">Monday in Utrecht, 14 September 2026</p>
+    <h1>Bolwerken, a fort full of plants, and light on the water</h1>
+    <p class="subtitle">Pizza on the Oudegracht at midday, the old ramparts before it, and the gardens after. One hard deadline: Fort Hoofddijk shuts at 16:30.</p>
+  </header>
+
+  <div class="alert">
+    <strong>Two things on your list are closed today.</strong> Both are Monday closures, not holiday closures, so any other day of this week fixes them.
+    <ul>
+      <li><strong>Centraal Museum</strong> &mdash; open Tuesday to Sunday, 11:00 to 17:00. Closed Mondays.</li>
+      <li><strong>Kat &amp; Bakkie</strong> &mdash; closed Monday. Their own site lists Wednesday, Friday, Saturday and Sunday only, so Thursday looks doubtful too. Worth a phone call before you build a day around it. Note also that since September 2024 it is a design shop, not a cat cafe: the cats were moved somewhere quieter and they stopped serving coffee.</li>
+    </ul>
+  </div>
+
+  <div class="legend-strip">
+    <div class="legend-item"><span class="dot walk"></span> On foot</div>
+    <div class="legend-item"><span class="dot transit"></span> By tram, bus or bike</div>
+    <div class="legend-item"><span class="dot optional"></span> Cut this if the day runs long</div>
+    <div class="legend-item"><span class="dot closed"></span> Closed today</div>
+  </div>
+
+  <div id="map"></div>
+
+  <h2>The day</h2>
+  <div class="timeline">
+
+    <div class="stop">
+      <div class="stop-time">11:00 to 12:30</div>
+      <div class="stop-name">The walls and the bolwerken</div>
+      <div class="stop-blurb">
+        <p>Start on the eastern arc of the Singel, south to north, where four of the five surviving bolwerken are. It is 2.1 km of actual walking, about 26 minutes moving, so an hour and a half is a comfortable pace with stops. Flat throughout, with only the gentle grassy rises of the old earthworks &mdash; no stairs anywhere on it.</p>
+        <p>The full history is below. The route runs Manenburg, Sonnenborgh, Lepelenburg, Lucasbolwerk and the surviving scrap of wall, ending at Wolvenplein.</p>
+        <div class="meta">Sonnenborgh's museum and observatory is closed Mondays, but the bastion it sits on is outdoors and visible either way. From Wolvenplein it is 1.0 km, about 12 minutes, down to the Oudegracht for lunch.</div>
+      </div>
+    </div>
+
+    <div class="stop">
+      <div class="stop-time">12:45 to 13:45</div>
+      <div class="stop-name">Lunch at Pizza Beppe</div>
+      <div class="stop-blurb">
+        <p>Neapolitan, in a cellar on the Oudegracht with the canal right there. It was the first restaurant in the Netherlands admitted to the Associazione Verace Pizza Napoletana, and it is the best-rated thing on that stretch of water. Sitting down at the wharf level is half the point.</p>
+        <div class="meta">Oudegracht 178. Opens at 12:00 on Monday, so 12:45 is comfortably inside service. It is 1.0 km from there to the station, about 12 minutes on foot. Book ahead on their site; they take tables up to 18 people.</div>
+      </div>
+    </div>
+
+    <div class="stop">
+      <div class="stop-time">14:00 to 14:30</div>
+      <div class="stop-name">The world's largest bicycle parking, under Stationsplein</div>
+      <div class="stop-blurb">
+        <p>You are going through Centraal anyway, so go down into it. <strong>12,500 spaces</strong> on three floors &mdash; 12,656 counting the 480 oversized bays for cargo bikes and tandems &mdash; which took the world record off a garage in Tokyo when it opened on 19 August 2019. Parked end to end the bikes would make a row 25 km long. The floorplate is 21,373 m2, about 4.3 football pitches.</p>
+        <p>The thing actually worth seeing is that <strong>you ride through it</strong>. A continuous one-way cycle path runs down through all three levels at 15 km/h, in one side and out the other, so it behaves like a road rather than a car park. 161 digital signs count free spaces row by row and steer you to them. Ector Hoogstad Architecten designed it; it won the Betonprijs in 2017 and an Architizer A+ award in 2018.</p>
+        <div class="meta">Open 24/7, first 24 hours free, then &euro;1.25 a day (&euro;2.50 for a cargo bike). No ticket needed just to walk in and look. Worth knowing what is directly overhead: this sits under Stationsplein right where the Catharijnesingel was re-dug in 2020, so the canal you read about below is flowing above your head.</div>
+      </div>
+    </div>
+
+    <div class="stop transit">
+      <div class="stop-time">14:35</div>
+      <div class="stop-name">Out to Utrecht Science Park</div>
+      <div class="stop-blurb">
+        <p>Two ways to do this. <strong>Tram 22</strong> from Utrecht Centraal is about 13 minutes to the Padualaan stop, and from that stop the garden entrance is only 277 m, a three minute walk on the flat. Trams 20, 21 and 22 all run on weekdays; on weekends only bus 28 serves it, so today the tram is available.</p>
+        <p>Or take a <strong>Cargoroo</strong> and ride it: 4.93 km from Domplein, about 17 minutes. One catch worth knowing before you commit &mdash; a Cargoroo has to be ended in the same blue parking zone where you picked it up, so this is a round trip, not a one-way, and the meter runs at &euro;0.11 a minute while it sits at the gardens. Roughly three hours of rental is about &euro;21, so if you go this way, price the 9-hour pass instead.</p>
+      </div>
+    </div>
+
+    <div class="stop">
+      <div class="stop-time">14:55 to 16:25</div>
+      <div class="stop-name">Fort Hoofddijk and the Botanic Gardens</div>
+      <div class="stop-blurb">
+        <p>The university's botanic gardens are built on and around Fort Hoofddijk, a fort of the Nieuwe Hollandse Waterlinie, so the rock garden is literally planted over the earthworks. It is one of the largest rock gardens in Europe by both area and species count.</p>
+        <p>Tuincafe Botanica at the main entrance is there for a coffee, since lunch is already behind you.</p>
+        <div class="meta">Budapestlaan 17. Open daily 10:00 to 16:30 &mdash; this is the hard deadline of the day, and arriving just before 15:00 still leaves an unhurried ninety minutes. Adults &euro;10, students and U-pass &euro;4.50, free with a Museumkaart. Buy online. Use the Budapestlaan entrance, not Harvardlaan: Budapestlaan is the step-free one and Harvardlaan is explicitly not suitable for wheelchairs or strollers.</div>
+      </div>
+    </div>
+
+    <div class="stop optional">
+      <div class="stop-time">17:00 to 18:30</div>
+      <div class="stop-name">Waterwerken, out at Lage Weide</div>
+      <div class="stop-blurb">
+        <p>Ruud Kuijer's seven reinforced-concrete sculptures stand on a half-kilometre strip between the Isotopenweg and the Amsterdam-Rijnkanaal. He worked on them from 2001 to 2013. They run up to 12 m tall and 14 m long, and it is the largest public sculpture project in the Netherlands. They are lit after dark, which is a genuinely different experience from seeing them by day.</p>
+        <p>It is 5.68 km by bike from Domplein, about 21 minutes, or 5.22 km from Centraal, about 19 minutes. Take an OV-fiets from the station rather than a Cargoroo &mdash; Lage Weide is an industrial estate and almost certainly sits outside the Cargoroo zone you would have to return the bike to.</p>
+        <div class="meta">Isotopenweg 55. Outdoors, along a public dead-end road, free, no opening hours. This is the piece to drop if the day is running long: it is the only thing on the list that points away from everything else, and the round trip is about 40 minutes of riding on top of the time you spend there.</div>
+      </div>
+    </div>
+
+    <div class="stop optional">
+      <div class="stop-time">20:15 onward</div>
+      <div class="stop-name">The Lumen walk</div>
+      <div class="stop-blurb">
+        <p><strong>Probably not happening today</strong> &mdash; it is here so it is written down, not because the day depends on it. Sunset is 19:59 and full dark is about 20:34, so there is no way to see these any earlier, and that is a long time to wait after the gardens close.</p>
+        <p>Nine light works over 3 km, free, visible seven days a week from sunset to midnight, so any evening you are still in Utrecht will do. The route starts at the tourist information centre on Domplein and doubles as a way to see the wharf level of the Oudegracht lit up.</p>
+        <p>In order: Domplein, Pausdam, the lights of Saint Peter's Church at Pieterskerkhof 5, the Drift vaults at Drift 9, Jans Light at Janskerkhof, Saint Willibrord Church at Minrebroederstraat 21, the Ganzenmarkt tunnel, the Oudegracht bridges, and Buurkerkhof.</p>
+        <div class="meta">It is a loop through the centre, so you can join it anywhere and bail at any point.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>Why there is a ring of parks where the wall used to be</h2>
+  <div class="prose">
+    <p>Utrecht got city rights in 1122, and the residents immediately started digging. They cut a circular moat, the singel, threw up an earthen rampart behind it, and topped that with a wall of volcanic tuff hauled in from the Eifel in Germany. About twelve stone towers, some 25 m tall, went up in that first phase. When brick-making resumed locally, everything after about 1250 was rebuilt in brick.</p>
+    <p>It got tested. In 1345 Count Willem IV of Holland showed up with 30,000 men and siege engines. The walls held for six weeks before the city gave in &mdash; which counts as a good outcome for the masonry. Modernisation started in earnest around 1366, and by the 1400s the circuit had <strong>50 towers, 5 main gates and a wall 10 m high</strong>. The 21 guilds each maintained an assigned stretch, the gildeslag, and manned it.</p>
+    <p>Then gunpowder changed the arithmetic. Charles V took the city in 1528 and rebuilt hard: Vredenburg castle planted <em>inside</em> the walls as a statement about who was in charge, and seven rounded artillery platforms along the north between 1532 and 1542 so defenders could rake the moat with flanking fire. From 1543 the master builder Willem van Noort designed proper five-sided bastions &mdash; <strong>Morgenster finished in 1552</strong>, then Zonnenburg, Manenburg and Sterrenburg, the last covering the rebuilt south gate in 1565. A carved brick on Sonnenborgh read <em>"Sonnenborgh is mine naem, Anno XV.LII was ick volmaect teghen den vianden aldus bequaem"</em> &mdash; Sonnenborgh is my name, in 1552 I was made ready against the enemy.</p>
+    <p>Between 1578 and 1580, on William of Orange's advice, five big <strong>earthen</strong> bolwerken were added: Lepelenburg, Wolvenburg, Lucasbolwerk, Mariabolwerk and Begijnebolwerk. They looked like the stone bastions but had no built-in gun emplacements. Mariabolwerk was pulled down around 1664; the other four are still there under the grass.</p>
+    <p>After 1600 the whole system quietly rotted. People planted trees on it, which is fatal to a fortification because it blocks the fields of fire. Once the Netherlands was unified in 1815 the defences were simply obsolete. In 1828 the Haarlem architect <strong>J.D. Zocher</strong> was handed the whole ring and drew a plan to turn it into parkland and housing in the English landscape manner. Demolition started in 1830. The Bijlhouwerstoren, last of the towers, came down in 1872.</p>
+    <p>So the park you walk today is the fortification, re-landscaped rather than erased: 6 km of narrow green following the exact line of the moat, now a protected monument in its own right. The height changes under your feet are the bastions. The best tell is at the former Sterrenburg, where the singel turns east.</p>
+    <p>One more chapter, and it nearly went badly. In the 1950s planners proposed filling the singel in to build a ring road. Public opposition killed most of it, but a stretch was filled in 1970 for the Hoog Catharijne mall anyway. That was <strong>reversed in 2020</strong>, and the medieval water circuit is complete again for the first time in fifty years &mdash; which is why the Catharijnesingel looks so conspicuously new.</p>
+
+    <table class="walltable">
+      <thead><tr><th>Stop</th><th>What you are actually looking at</th></tr></thead>
+      <tbody>
+        <tr><td>Manenburg</td><td>One of Willem van Noort's five-sided stone bastions, 1550s. Only fragments survive, but they are real masonry, not reconstruction. South end of the walk, a minute from Twijnstraat.</td></tr>
+        <tr><td>Sonnenborgh</td><td>The best-preserved of the lot &mdash; a complete 1552 bastion. An observatory was built on top of it in 1853, which is the reason it was never demolished. Museum closed Mondays; the bastion is outdoors.</td></tr>
+        <tr><td>Lepelenburg</td><td>An earthen bolwerk from the 1570s, absorbed into Zocher's park in the 19th century. This is where the green belt widens into an actual park rather than a strip.</td></tr>
+        <tr><td>Lucasbolwerk</td><td>Another 1570s earthwork, now the ground the city theatre sits on. The small surviving section of the medieval city wall is in the Zocherplantsoen right by the theatre &mdash; it is easy to walk past, so look for it.</td></tr>
+        <tr><td>Wolvenplein</td><td>Wolvenburg, the fourth surviving earthwork, with the 19th-century prison built on it. North end of the walk, and about 12 minutes on foot from the Oudegracht.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footnote">
+    <strong>If you would rather not walk so much.</strong> The bolwerken arc and Waterwerken are the two flexible items, and they are also the two most tiring. Doing both puts roughly 6 km on your feet and 20 km on a bike. Pick one. The walls walk is flat, central, free and needs no equipment; Waterwerken is a bike ride to an industrial estate for seven very large concrete objects. If the legs are the constraint, the walls win. If the weather is good and you want to be moving, take the bikes out to the canal.
+  </div>
+
+  <div class="footnote">
+    <strong>Dinner is deliberately open.</strong> With pizza at lunch there is nothing booked for the evening. If Waterwerken happens you will be back in the centre around 18:45 and can pick something on the spot; the Oudegracht wharf terraces are the obvious fallback and need no plan.
+  </div>
+
+  <div class="footnote">
+    <strong>Moved to another day.</strong> Centraal Museum and Kat &amp; Bakkie both want a Tuesday through Sunday. The museum is a five minute walk from Manenburg, so it slots straight into the start of the walls walk on any other day, and Twijnstraat &mdash; where Kat &amp; Bakkie is &mdash; is on the same block. Doing those three together is a natural afternoon.
+  </div>
+
+  <footer>
+    <p>Distances and times from OpenStreetMap routing; opening hours checked against each venue's own site on 14 September 2026. Sunset and dusk computed for Utrecht, 52.09 N.</p>
+    <ul>
+      <li><a href="https://www.discover-utrecht.com/route/88806/utrecht-lumen-walk">Utrecht Lumen walk</a> &mdash; Discover Utrecht</li>
+      <li><a href="https://www.centraalmuseum.nl/en">Centraal Museum</a></li>
+      <li><a href="https://www.uu.nl/en/botanic-gardens/plan-your-visit/tickets-and-opening-hours">Botanic Gardens, tickets and hours</a> &mdash; Utrecht University</li>
+      <li><a href="https://www.katenbakkie.nl/service/onze-winkel/">Kat &amp; Bakkie, onze winkel</a></li>
+      <li><a href="https://www.pizzabeppe.nl/en/locations/utrecht/oudegracht">Pizza Beppe Oudegracht</a></li>
+      <li><a href="https://erfgoed.utrecht.nl/verhalen/de-utrechtse-stadsverdediging">De Utrechtse stadsverdediging</a> &mdash; gemeente Utrecht erfgoed</li>
+      <li><a href="https://www.spottedbylocals.com/utrecht/zocherpark/">Zocherpark</a> &mdash; Spotted by Locals</li>
+      <li><a href="https://www.helenonherholidays.com/things-to-do-in-utrecht/">Things to do in Utrecht</a> &mdash; Helen on her Holidays</li>
+      <li><a href="https://www.utrecht.nl/city-of-utrecht/mobility/cycling/bicycle-parking/bicycle-parking-stationsplein/bicycle-parking-stationsplein-utrecht-largest-in-the-world">Bicycle parking Stationsplein, largest in the world</a> &mdash; gemeente Utrecht</li>
+      <li><a href="https://cargoroo.nl/en/how-does-cargoroos-electric-neighborhood-cargo-bike-work/">How a Cargoroo works</a></li>
+    </ul>
+  </footer>
+</div>
+
+<script>
+/*
+ * The day's points. `kind` drives both the marker color and the tooltip class:
+ * walk (teal), transit (sand), optional (purple), closed (rust).
+ */
+var PLACES = [
+  {n:'Utrecht Centraal',            ll:[52.089393,5.109821], kind:'transit'},
+  {n:'Stationsplein bike garage',   ll:[52.090400,5.111400], kind:'walk'},
+  {n:'Padualaan stop',              ll:[52.085880,5.168180], kind:'transit'},
+  {n:'Fort Hoofddijk + gardens',    ll:[52.087981,5.169072], kind:'walk'},
+  {n:'Manenburg',                   ll:[52.081652,5.124632], kind:'walk'},
+  {n:'Sonnenborgh',                 ll:[52.085333,5.129051], kind:'walk'},
+  {n:'Lepelenburg',                 ll:[52.089171,5.128493], kind:'walk'},
+  {n:'Lucasbolwerk + wall fragment',ll:[52.093946,5.126730], kind:'walk'},
+  {n:'Wolvenplein',                 ll:[52.096479,5.125309], kind:'walk'},
+  {n:'Waterwerken',                 ll:[52.106621,5.074690], kind:'optional'},
+  {n:'Pizza Beppe',                 ll:[52.089419,5.121352], kind:'walk'},
+  {n:'Lumen walk starts here',      ll:[52.090934,5.121046], kind:'walk'},
+  {n:'Centraal Museum (closed Mon)',ll:[52.083612,5.125664], kind:'closed'},
+  {n:'Kat & Bakkie (closed Mon)',   ll:[52.082122,5.123820], kind:'closed'}
+];
+
+var COLORS = {walk:'#2f5d5a', transit:'#b9822f', optional:'#8a6fae', closed:'#b5573f'};
+
+var map = L.map('map', {scrollWheelZoom:false});
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution:'&copy; OpenStreetMap contributors', maxZoom:19
+}).addTo(map);
+
+/* The bolwerken arc, drawn as a line so the shape of the old east wall reads. */
+var WALL_ARC = [
+  [52.081652,5.124632],[52.085333,5.129051],[52.089171,5.128493],
+  [52.093946,5.126730],[52.096479,5.125309]
+];
+L.polyline(WALL_ARC, {color:'#2f5d5a', weight:3, opacity:0.55, dashArray:'6,6'}).addTo(map);
+
+var bounds = [];
+PLACES.forEach(function(p){
+  var c = COLORS[p.kind];
+  L.circleMarker(p.ll, {
+    radius:7, color:c, weight:3, fillColor:'#fffdf8',
+    fillOpacity: p.kind === 'closed' ? 0.35 : 1
+  }).addTo(map).bindTooltip(p.n, {permanent:false, direction:'top', className:'stop-tooltip ' + p.kind});
+  bounds.push(p.ll);
+});
+map.fitBounds(bounds, {padding:[34,34]});
+</script>
+</body>
+</html>
