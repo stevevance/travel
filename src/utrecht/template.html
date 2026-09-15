@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
+<title>Utrecht, a day by tram, foot and bakfiets</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="map-common.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="map-common.js"></script>
+<style>
+  /* Only what this page adds to map-common.css. */
+  .ride{
+    margin:12px 0 0;padding:10px 0 0;
+    border-top:1px solid var(--line);
+    font-size:0.85rem;
+    cursor:pointer;border-radius:4px;
+  }
+  .ride:hover,.ride:focus-visible{background:rgba(125,75,194,0.10);outline:none;}
+  .ride b{display:block;font-weight:600;}
+  .ride span{display:block;color:var(--ink-soft);font-size:0.78rem;}
+  .caveat{
+    margin:12px 0 0;padding:10px 0 0;
+    border-top:1px solid var(--line);
+    color:var(--ink-soft);font-size:0.76rem;line-height:1.4;
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel" id="panel">
+  <p class="backlink"><a href="./">&larr; All travel plans</a></p>
+  <p class="kicker">Monday, 14 September 2026</p>
+  <h1>Utrecht, by tram, foot and bakfiets</h1>
+  <div class="legend">
+    <div class="lg"><span class="sw tram"></span> Tram 22</div>
+    <div class="lg"><span class="sw walk"></span> On foot</div>
+    <div class="lg"><span class="sw bike"></span> By bakfiets</div>
+  </div>
+  <p class="iconnote">Icons say what each stop was for; faded glyphs are places we
+     only passed. Click any step to fly there.</p>
+  <ol id="key"></ol>
+  <div class="ride" id="ride"></div>
+  <p class="caveat" id="caveat"></p>
+</div>
+<script>
+const LINES = __LINES__;
+const STOPS = __STOPS__;
+
+/* What each stop was for, keyed the same way as STOPS. */
+const STOP_ICON = {
+  cs:'tram',            padualaan:'tram',      vaartsche:'tram',
+  gardens:'garden',     manenburg:'bastion',   sonnenborgh:'bastion',
+  lepelenburg:'bastion',lucasbolwerk:'bastion',domtoren:'tower',
+  beppe:'food',         panuozzo:'food',       bike:'bakfiets'
+};
+/* Passed, not visited: the three tram platforms, and Pizza Beppe, which was
+   walked to and turned down at the door. */
+const QUIET = ['cs', 'padualaan', 'vaartsche', 'beppe'];
+
+const kit = MapKit.render({lines: LINES, stops: STOPS,
+                           stopIcon: STOP_ICON, quiet: QUIET});
+
+/* The ride is the one leg on any of these maps that was measured rather than
+   routed, so it gets its own block with the recorded numbers. */
+const ride = LINES.features.find(f => f.properties.source === 'gps');
+const gap  = LINES.features.find(f => f.properties.mode === 'bike'
+                                   && f.properties.source === 'routed');
+const rideBox = document.getElementById('ride');
+rideBox.tabIndex = 0;
+rideBox.setAttribute('role', 'button');
+const showRide = () => kit.flyToFeatures(f => f.properties.mode === 'bike');
+rideBox.addEventListener('click', showRide);
+rideBox.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showRide(); }
+});
+rideBox.innerHTML =
+  '<b>' + MapKit.iconHTML('bakfiets', false) + 'Then the bakfiets, 19:07 to 19:52</b>'
+  + '<span>' + ride.properties.km.toFixed(1) + ' km recorded on Strava, out west '
+  + 'and back to the same corner.</span>'
+  + '<span>The first ' + Math.round(gap.properties.km * 1000) + ' m, out '
+  + 'Waterstraat and down Sint-Jacobsstraat, is from before the recording '
+  + 'started.</span>';
+
+document.getElementById('caveat').textContent =
+  'Tram geometry from OpenStreetMap; walking and the unrecorded opening of the '
+  + 'ride from Valhalla routing. The turn west off Lucasbolwerk is an inference '
+  + 'from "the main street", not a recorded one.';
+</script>
+</body>
+</html>

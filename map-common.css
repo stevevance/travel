@@ -1,0 +1,168 @@
+/* Shared look for the route maps (Rotterdam, The Hague, Utrecht).
+ *
+ * Page-specific copy and one-off blocks stay in each page's own <style>;
+ * everything structural lives here so the three maps cannot drift apart.
+ * The behaviour that goes with it is in map-common.js. */
+
+:root{
+  --ink:#14201c;
+  --ink-soft:#5a5346;
+  --paper:#f6f3ec;
+  --line:#c9c1ae;
+  /* Categorical by MODE, shared by every map in this set so a mode keeps the
+     same color from one page to the next. Validated all-pairs on a light
+     surface; line identity rides on the numbered badges, not on hue. */
+  --metro:#2a78d6;
+  --tram:#eb6834;
+  --train:#1baf7a;
+  --bike:#7d4bc2;
+  --walk:#5f5b54;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+}
+#map{position:absolute;inset:0;}
+
+.panel{
+  position:absolute;
+  top:18px;left:18px;
+  z-index:2;
+  width:310px;
+  max-height:calc(100% - 36px);
+  overflow:auto;
+  background:rgba(255,253,248,0.96);
+  border:1px solid var(--line);
+  border-radius:5px;
+  padding:16px 18px 14px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.10);
+}
+.kicker{font-style:italic;color:#2f5d5a;font-size:0.85rem;margin:0 0 4px;}
+h1{font-size:1.3rem;margin:0 0 10px;font-weight:600;letter-spacing:-0.01em;line-height:1.25;}
+
+.backlink{margin:0 0 14px;font-size:0.82rem;}
+.backlink a{color:#2f5d5a;text-decoration:none;}
+.backlink a:hover{text-decoration:underline;}
+
+.legend{
+  display:flex;flex-direction:column;gap:7px;
+  padding:10px 0 12px;margin-bottom:10px;
+  border-bottom:1px solid var(--line);
+}
+.lg{display:flex;align-items:center;gap:9px;font-size:0.85rem;color:var(--ink-soft);}
+.sw{width:26px;height:0;border-top-width:4px;border-top-style:solid;flex:none;border-radius:2px;}
+.sw.metro{border-color:var(--metro);}
+.sw.tram{border-color:var(--tram);}
+.sw.train{border-color:var(--train);}
+.sw.bike{border-color:var(--bike);}
+.sw.walk{border-top-style:dotted;border-top-width:4px;border-color:var(--walk);}
+
+.ico{
+  width:15px;height:15px;flex:none;
+  vertical-align:-2px;margin-right:5px;
+  fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+ol li .ico{color:#2f5d5a;}
+/* Stops we only passed through stay quiet, so the eye lands on the places we
+   actually went. */
+ol li .ico.quiet{color:var(--ink-soft);opacity:0.5;}
+.iconnote{
+  margin:0 0 10px;font-size:0.75rem;line-height:1.35;
+  color:var(--ink-soft);font-style:italic;
+}
+
+ol{list-style:none;padding:0;margin:0;font-size:0.85rem;}
+ol li{
+  position:relative;
+  padding:4px 4px 4px 28px;
+  line-height:1.35;
+  cursor:pointer;
+  border-radius:4px;
+}
+/* Each row flies the map to its stop, so the key doubles as a way to navigate. */
+ol li:hover,
+ol li:focus-visible{background:rgba(47,93,90,0.09);outline:none;}
+ol li:focus-visible{box-shadow:0 0 0 2px rgba(47,93,90,0.45);}
+/* Numbering comes from data-n, not a CSS counter: counter() counts list items,
+   so any revisited stop pushes the legend out of step with the markers. */
+ol li::before{
+  content:attr(data-n);
+  position:absolute;left:0;top:4px;
+  width:19px;height:19px;border-radius:50%;
+  background:#fff;border:2px solid var(--ink-soft);
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  font-size:0.66rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+ol li.metro::before{border-color:var(--metro);}
+ol li.tram::before{border-color:var(--tram);}
+ol li.train::before{border-color:var(--train);}
+ol li.bike::before{border-color:var(--bike);}
+ol li.walk::before{border-color:var(--walk);}
+.via{display:block;color:var(--ink-soft);font-size:0.78rem;}
+
+@media (max-width: 700px){
+  .panel{
+    top:auto;
+    left:0;
+    right:0;
+    bottom:0;
+    width:auto;
+    max-height:42%;
+    border-radius:10px 10px 0 0;
+    border-left:none;
+    border-right:none;
+    border-bottom:none;
+    padding:12px 16px 16px;
+  }
+  .panel h1{font-size:1.1rem;}
+  .legend{flex-direction:row;flex-wrap:wrap;gap:6px 16px;}
+}
+
+/* NOTE: no `position` here, deliberately. MapLibre places markers with
+   `.maplibregl-marker{position:absolute}` from its own stylesheet, and a rule
+   of equal specificity loaded later silently wins - which drops every marker
+   into normal document flow and stacks them one marker-height apart down the
+   page. That shipped on two of these maps. The badge below anchors against the
+   marker's own absolute box, so nothing extra is needed. */
+.stopdot{
+  width:26px;height:26px;border-radius:50%;
+  background:#fff;
+  border:3px solid var(--ink-soft);
+  box-shadow:0 1px 4px rgba(0,0,0,0.30);
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  font-size:0.72rem;font-weight:700;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+}
+.stopdot.metro{border-color:var(--metro);}
+.stopdot.tram{border-color:var(--tram);}
+.stopdot.train{border-color:var(--train);}
+.stopdot.bike{border-color:var(--bike);}
+.stopdot.walk{border-color:var(--walk);}
+
+/* A small glyph clipped to the marker, so the map reads on its own when the
+   side panel is cropped away for an inset or a screenshot. */
+.stopdot .pin-ico{
+  position:absolute;right:-8px;top:-8px;
+  width:17px;height:17px;border-radius:50%;
+  background:#fff;border:1px solid var(--line);
+  box-shadow:0 1px 3px rgba(0,0,0,0.25);
+  display:flex;align-items:center;justify-content:center;
+}
+.stopdot .pin-ico .ico{width:11px;height:11px;margin:0;stroke-width:2;color:#2f5d5a;}
+
+.maplibregl-popup-content{
+  font-family:'Iowan Old Style',Palatino,Georgia,serif;
+  padding:9px 13px;border-radius:4px;
+}
+.maplibregl-popup-content b{display:block;font-size:0.95rem;}
+.maplibregl-popup-content span{color:#5a5346;font-size:0.82rem;}
+
+/* Screenshot mode: hide the interactive chrome that should not bake into a PNG */
+body.shot .maplibregl-ctrl-bottom-right,
+body.shot .maplibregl-ctrl-top-right{display:none;}

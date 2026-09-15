@@ -4,3 +4,8 @@ __pycache__/
 .venv/
 src/**/*.json
 src/**/tilecache/
+
+# Raw GPS traces stay local. The maps draw a simplified, trimmed version of the
+# ride; the one-second original is finer than anything published and this repo
+# is public. Keep the file alongside the notes in data/ to rebuild.
+data/**/*.gpx

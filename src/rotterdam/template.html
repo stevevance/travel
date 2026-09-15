@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
+<title>Rotterdam, a day by tram, bike and foot</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="map-common.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="map-common.js"></script>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel" id="panel">
+  <p class="backlink"><a href="./">&larr; All travel plans</a></p>
+  <p class="kicker">Sunday, 13 September 2026 &middot; a day around the city</p>
+  <h1>Rotterdam, by tram, bike and foot</h1>
+  <div class="legend">
+    <div class="lg"><span class="sw tram"></span> Tram 8</div>
+    <div class="lg"><span class="sw bike"></span> By bike</div>
+    <div class="lg"><span class="sw walk"></span> On foot</div>
+  </div>
+  <p class="iconnote">Icons say what each stop was for; faded glyphs are transit
+     stops we only passed through. Click any step to fly there.</p>
+  <ol id="key"></ol>
+</div>
+<script>
+const LINES = __LINES__;
+const STOPS = __STOPS__;
+
+/* What each stop was for, keyed the same way as STOPS. */
+const STOP_ICON = {
+  teldersweg:'tram',  provenierssingel:'tram', oasis:'food',   round_round:'drinks',
+  bikes:'bike',       fenixplein:'bike',       fenix:'museum', kaapse:'drinks',
+  mobrigado:'food',   noahs:'food',            bikes2:'bike',  wilgenlei:'tram'
+};
+/* Boarded or collected here and nothing more. */
+const QUIET = ['teldersweg', 'provenierssingel', 'wilgenlei'];
+
+MapKit.render({lines: LINES, stops: STOPS, stopIcon: STOP_ICON, quiet: QUIET});
+</script>
+</body>
+</html>

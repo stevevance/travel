@@ -6,129 +6,15 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
 <title>The Hague day, by tram, metro and train</title>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="map-common.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<style>
-  :root{
-    --ink:#14201c;
-    --ink-soft:#5a5346;
-    --paper:#f6f3ec;
-    --line:#c9c1ae;
-    /* Categorical by MODE. Three slots, validated all-pairs on a light
-       surface; line identity rides on the numbered badges, not on hue. */
-    --metro:#2a78d6;
-    --tram:#eb6834;
-    --train:#1baf7a;
-    --walk:#5f5b54;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;height:100%;}
-  body{
-    background:var(--paper);
-    color:var(--ink);
-    font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
-  }
-  #map{position:absolute;inset:0;}
-
-  .panel{
-    position:absolute;
-    top:18px;left:18px;
-    z-index:2;
-    width:310px;
-    max-height:calc(100% - 36px);
-    overflow:auto;
-    background:rgba(255,253,248,0.96);
-    border:1px solid var(--line);
-    border-radius:5px;
-    padding:16px 18px 14px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.10);
-  }
-  .kicker{
-    font-style:italic;color:#2f5d5a;font-size:0.85rem;margin:0 0 4px;
-  }
-  h1{font-size:1.3rem;margin:0 0 10px;font-weight:600;letter-spacing:-0.01em;line-height:1.25;}
-
-  .legend{
-    display:flex;flex-direction:column;gap:7px;
-    padding:10px 0 12px;margin-bottom:10px;
-    border-bottom:1px solid var(--line);
-  }
-  .lg{display:flex;align-items:center;gap:9px;font-size:0.85rem;color:var(--ink-soft);}
-  .sw{width:26px;height:0;border-top-width:4px;border-top-style:solid;flex:none;border-radius:2px;}
-  .sw.metro{border-color:var(--metro);}
-  .sw.tram{border-color:var(--tram);}
-  .sw.train{border-color:var(--train);}
-  .sw.walk{border-top-style:dotted;border-top-width:4px;border-color:var(--walk);}
-
-  ol{list-style:none;padding:0;margin:0;font-size:0.85rem;}
-  ol li{
-    position:relative;
-    padding:4px 0 4px 28px;
-    line-height:1.35;
-  }
-  ol li::before{
-    content:attr(data-n);
-    position:absolute;left:0;top:4px;
-    width:19px;height:19px;border-radius:50%;
-    background:#fff;border:2px solid var(--ink-soft);
-    font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
-    font-size:0.66rem;font-weight:700;
-    display:flex;align-items:center;justify-content:center;
-  }
-  ol li.metro::before{border-color:var(--metro);}
-  ol li.tram::before{border-color:var(--tram);}
-  ol li.train::before{border-color:var(--train);}
-  ol li.walk::before{border-color:var(--walk);}
-  .via{display:block;color:var(--ink-soft);font-size:0.78rem;}
-
-  @media (max-width: 700px){
-    .panel{
-      top:auto;
-      left:0;
-      right:0;
-      bottom:0;
-      width:auto;
-      max-height:42%;
-      border-radius:10px 10px 0 0;
-      border-left:none;
-      border-right:none;
-      border-bottom:none;
-      padding:12px 16px 16px;
-    }
-    .panel h1{font-size:1.1rem;}
-    .legend{flex-direction:row;flex-wrap:wrap;gap:6px 16px;}
-  }
-
-  .stopdot{
-    width:26px;height:26px;border-radius:50%;
-    background:#fff;
-    border:3px solid var(--ink-soft);
-    box-shadow:0 1px 4px rgba(0,0,0,0.30);
-    font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
-    font-size:0.72rem;font-weight:700;color:var(--ink);
-    display:flex;align-items:center;justify-content:center;
-    cursor:pointer;
-  }
-  .stopdot.metro{border-color:var(--metro);}
-  .stopdot.tram{border-color:var(--tram);}
-  .stopdot.train{border-color:var(--train);}
-  .stopdot.walk{border-color:var(--walk);}
-
-  .maplibregl-popup-content{
-    font-family:'Iowan Old Style',Palatino,Georgia,serif;
-    padding:9px 13px;border-radius:4px;
-  }
-  .maplibregl-popup-content b{display:block;font-size:0.95rem;}
-  .maplibregl-popup-content span{color:#5a5346;font-size:0.82rem;}
-
-  /* Screenshot mode: hide the interactive chrome that should not bake into a PNG */
-  body.shot .maplibregl-ctrl-bottom-right,
-  body.shot .maplibregl-ctrl-top-right{display:none;}
-</style>
+<script src="map-common.js"></script>
 </head>
 <body>
 <div id="map"></div>
 <div class="panel" id="panel">
-  <p class="kicker">A day out from Rotterdam</p>
+  <p class="backlink"><a href="./">&larr; All travel plans</a></p>
+  <p class="kicker">Saturday, 12 September 2026 &middot; a day out from Rotterdam</p>
   <h1>The Hague, Delft and back</h1>
   <div class="legend">
     <div class="lg"><span class="sw metro"></span> Metro E (RandstadRail)</div>
@@ -136,164 +22,32 @@
     <div class="lg"><span class="sw train"></span> NS Intercity</div>
     <div class="lg"><span class="sw walk"></span> On foot</div>
   </div>
+  <p class="iconnote">Icons say what each stop was for; faded glyphs are transit
+     stops we only passed through. Click any step to fly there.</p>
   <ol id="key"></ol>
 </div>
 <script>
 const LINES = __LINES__;
 const STOPS = __STOPS__;
 
-const COLOR = {metro:'#2a78d6', tram:'#eb6834', train:'#1baf7a', walk:'#5f5b54'};
+/* What each stop was for, keyed the same way as STOPS. */
+const STOP_ICON = {
+  meijersplein:'train', denhaag_cs:'train', bierkade:'ship',   kerkplein:'church',
+  ov_museum:'museum',   kurhaus:'landmark', summertime:'drinks', malieveld:'park',
+  koekamp:'deer',       binnenhof:'castle', grote_markt:'shops', prinsenhof:'museum',
+  lakila:'food',        delft_station:'train', rotterdam_cs:'train', wilgenlei:'tram'
+};
+/* Changed vehicles here and nothing more. */
+const QUIET = ['meijersplein', 'denhaag_cs', 'delft_station', 'rotterdam_cs',
+               'wilgenlei'];
 
-{
-  /* nopanel drops the whole side panel (insets); nohead drops just its title,
-     for the composed sheet where the title already sits in the page header. */
-  const qs = new URLSearchParams(location.search);
-  if (qs.get('nopanel')) document.getElementById('panel').style.display = 'none';
-  if (qs.get('nohead')) document.querySelectorAll('.panel .kicker, .panel h1')
-                                .forEach(el => el.style.display = 'none');
-}
-const map = new maplibregl.Map({
-  container: 'map',
-  style: 'https://tiles.openfreemap.org/styles/liberty',
-  attributionControl: false,
-  hash: false
-});
-const CHROME = !new URLSearchParams(location.search).get('nochrome');
-if (CHROME) {
-  map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-right');
-  map.addControl(new maplibregl.AttributionControl({compact:true}), 'bottom-right');
-}
-map.addControl(new maplibregl.ScaleControl({maxWidth:110, unit:'metric'}), 'bottom-left');
-
-/* Fit to the whole chain of legs so nothing is cropped. */
-const bounds = new maplibregl.LngLatBounds();
-LINES.features.forEach(f => f.geometry.coordinates.forEach(c => bounds.extend(c)));
-
-map.on('load', () => {
-  map.addSource('legs', {type:'geojson', data:LINES});
-
-  /* White casing under every line keeps the many Den Haag crossings legible. */
-  map.addLayer({
-    id:'legs-casing', type:'line', source:'legs',
-    layout:{'line-cap':'round','line-join':'round'},
-    paint:{
-      'line-color':'#ffffff',
-      'line-opacity':0.95,
-      'line-width':['interpolate',['linear'],['zoom'], 9,5, 12,8, 15,13, 17,18]
-    }
-  });
-  /* Transit and walking need separate layers: line-dasharray is not a
-     data-driven paint property, so it cannot switch on a feature's mode. */
-  map.addLayer({
-    id:'legs-line', type:'line', source:'legs',
-    filter:['!=',['get','mode'],'walk'],
-    layout:{'line-cap':'round','line-join':'round'},
-    paint:{
-      'line-color':['match',['get','mode'],
-        'metro',COLOR.metro,'tram',COLOR.tram,'train',COLOR.train,COLOR.walk],
-      'line-width':['interpolate',['linear'],['zoom'], 9,2.4, 12,4, 15,7, 17,10]
-    }
-  });
-  map.addLayer({
-    id:'legs-walk', type:'line', source:'legs',
-    filter:['==',['get','mode'],'walk'],
-    layout:{'line-cap':'butt','line-join':'round'},
-    paint:{
-      'line-color':COLOR.walk,
-      'line-width':['interpolate',['linear'],['zoom'], 9,2, 12,3.2, 15,5.5, 17,8],
-      'line-dasharray':[0.4,1.1]
-    }
-  });
-
-  /* One numbered marker per stop, ringed in the color of how you arrived. */
-  STOPS.features.forEach(f => {
-    const p = f.properties;
-    const el = document.createElement('div');
-    el.className = 'stopdot ' + p.arrive;
-    el.textContent = p.n;
-    new maplibregl.Marker({element:el})
-      .setLngLat(f.geometry.coordinates)
-      .setPopup(new maplibregl.Popup({offset:16, closeButton:false})
-        .setHTML('<b>' + p.n + '. ' + p.name + '</b>'
-                 + (p.note ? '<span>' + p.note + '</span>' : '')))
-      .addTo(map);
-  });
-
-  /* ?view=denhaag|delft frames a detail inset; default fits the whole day.
-     ?nopanel=1 drops the side panel so an inset is all map. */
-  const q = new URLSearchParams(location.search);
-  const VIEWS = {
+MapKit.render({
+  lines: LINES, stops: STOPS, stopIcon: STOP_ICON, quiet: QUIET,
+  views: {
     denhaag:     {center:[4.3042, 52.0877], zoom:12.15},
     scheveningen:{center:[4.2825, 52.11385], zoom:15.75},
     delft:       {center:[4.3572, 52.0102], zoom:14.30}
-  };
-  const v = VIEWS[q.get('view')];
-  if (v) {
-    map.jumpTo(v);
-  } else {
-    const narrow = window.matchMedia('(max-width: 700px)').matches;
-    const hidden = q.get('nopanel');
-    const pad = hidden ? {top:70, bottom:70, left:70, right:70}
-              : narrow ? {top:50, bottom:Math.round(window.innerHeight * 0.45), left:30, right:30}
-                       : {top:70, bottom:70, left:360, right:70};
-    map.fitBounds(bounds, {padding:pad, duration:0});
   }
-
-  /* Stop names drawn in-canvas, for the insets where there is no side panel.
-     MapLibre's own collision handling drops any that cannot fit. */
-  if (q.get('labels')) {
-    map.addSource('stops', {type:'geojson', data:STOPS});
-    map.addLayer({
-      id:'stop-labels', type:'symbol', source:'stops',
-      layout:{
-        'text-field':['get','name'],
-        'text-font':['Noto Sans Bold'],
-        'text-size':13,
-        'text-anchor':'left',
-        'text-offset':[1.3, 0],
-        'text-allow-overlap':false,
-        'text-padding':3
-      },
-      paint:{
-        'text-color':'#14201c',
-        'text-halo-color':'#ffffff',
-        'text-halo-width':2.2
-      }
-    });
-  }
-  /* Screenshot readiness. 'idle' is the clean signal, but on a big viewport
-     it can keep being deferred by trickling tile requests, so fall back to a
-     quiet period: style loaded and no data events for 3.5s. */
-  window.__mapReady = false;
-  let lastData = Date.now();
-  map.on('data', () => { lastData = Date.now(); });
-  map.once('idle', () => { window.__mapReady = true; });
-  setInterval(() => {
-    if (map.loaded() && Date.now() - lastData > 3500) window.__mapReady = true;
-  }, 500);
-});
-
-/* Build the numbered key from the legs, so the list and the map cannot drift. */
-const key = document.getElementById('key');
-const rows = [];
-const travelLegs = LINES.features.filter(f => !f.properties.access);
-travelLegs.forEach((f,i) => {
-  const p = f.properties;
-  if (i === 0) {
-    const origin = STOPS.features.find(s => s.properties.n === p.from_n);
-    rows.push({n:p.from_n, mode:p.mode, name:p.from,
-               via:(origin && origin.properties.note) || null});
-  }
-  const seen = rows.some(r => r.n === p.to_n);
-  rows.push({n:p.to_n, mode:p.mode, name:(seen ? 'back to ' + p.to : p.to),
-             via:(p.mode === 'walk' ? 'walk ' : p.line + ' \u00b7 ') + p.km + ' km'});
-});
-rows.forEach(r => {
-  const li = document.createElement('li');
-  li.className = r.mode;
-  li.dataset.n = r.n;
-  li.innerHTML = r.name + (r.via ? '<span class="via">' + r.via + '</span>' : '');
-  key.appendChild(li);
 });
 </script>
 </body>

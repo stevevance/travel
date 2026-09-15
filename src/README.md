@@ -10,7 +10,13 @@ a waypoint and re-running rather than hand-editing a 90 KB file.
 |---|---|
 | `hague/` | `hague-map.html` |
 | `rotterdam/` | `rotterdam-map.html` |
-| `utrecht/` | research scripts behind `utrecht-itinerary.html` |
+| `utrecht/` | `utrecht-map.html`, plus research scripts behind `utrecht-itinerary.html` |
+
+Each city directory holds a `template.html` with `__LINES__`/`__STOPS__`
+placeholders and a `build_html.py` that fills them in and writes the page to the
+repo root. The shared `map-common.js` and `map-common.css` at the root carry
+everything the three maps have in common - palette, panel, markers, the numbered
+key, click-to-fly - so a page's own file is just its copy and its stop icons.
 
 ## Data sources
 
@@ -22,12 +28,26 @@ Everything comes from public APIs, with no keys required:
 - **Valhalla** (`valhalla1.openstreetmap.de`) for pedestrian and bicycle routing.
 - **Nominatim** for geocoding. Their policy requires a contact in the
   User-Agent and a maximum of one request per second; the scripts comply.
+- **A Strava GPX export** for the one leg that was measured rather than routed:
+  the Utrecht bakfiets ride, in `data/utrecht/`. Every leg on that map carries a
+  `source` property — `osm`, `routed` or `gps` — and the page draws the routed
+  reconstruction dashed so it cannot pass for the recording.
 
 Cached API responses are gitignored. Deleting them just means the next run
 re-fetches, which takes a few minutes.
 
 ## Gotchas worth knowing before you edit
 
+- **Utrecht's tram 22 is tagged `route=light_rail`, not `route=tram`,** and is
+  split into one relation per direction. A `route=tram` query for ref 22 returns
+  nothing at all.
+- **Never give `.stopdot` a `position`.** MapLibre positions markers with
+  `.maplibregl-marker{position:absolute}` from its own stylesheet. A page rule
+  of equal specificity, loaded after it, silently wins and drops every marker
+  into normal document flow, stacking them one marker-height apart down the
+  page - correct at the top of the list, hundreds of pixels off at the bottom.
+  This shipped on both the Hague and Utrecht maps. A badge pinned to a marker
+  anchors against the marker's own absolute box; it needs no extra context.
 - **Do not over-constrain Valhalla.** Pinning two waypoints onto one stairway or
   a mid-block point makes the router double back. Four separate route bugs in
   these maps traced to exactly this; the fix each time was removing a waypoint,
@@ -45,6 +65,14 @@ re-fetches, which takes a few minutes.
 - **Check every waypoint dictionary key against a real leg.** Renaming a leg's
   origin without renaming its `VIA` key makes the lookup miss, return an empty
   list, and silently drop the detour with no error.
+
+## Checking a change
+
+`src/utrecht/shoot.py` renders a built page in headless Chrome and screenshots
+it; it needs `playwright` (`python3 -m venv .venv && .venv/bin/pip install
+playwright`), and uses the Chrome already on the machine rather than downloading
+one. Worth more than reading the diff: both marker bugs above were invisible in
+the source and obvious the moment a browser laid the page out.
 
 ## Privacy
 
