@@ -41,7 +41,9 @@ STOPS = {
     # on Londenstraat, by the Kusttram stop, after a walk along the sea wall.
     # The marker sits at the sea, where the ride out actually ended.
     "zeebrugge":   (51.328456, 3.176314),
-    # The longest dwell of the day - 6 min 50 s - at the foot of the pier.
+    # Where the ride home stands still longest: 6 min 50 s, at the foot of the
+    # pier. Longest within that one recording only - the day has far longer gaps
+    # between the recordings, so do not call it the longest stop of the day.
     "blankenberge":(51.320130, 3.137270),
     # Oude Burg, in the centre. The ride back ends on this street; the evening
     # meander starts from it.
@@ -59,8 +61,8 @@ NOTES = {
     "bluebike":     "Picked the bike up here at 14:26, and put it back at 21:17",
     "zeebrugge":    "The sea, 21 km out. The ride back starts 160 m south, "
                     "on Londenstraat by the Kusttram stop",
-    "blankenberge": "Turned west along the coast instead of south. Longest stop "
-                    "of the day, at the pier",
+    "blankenberge": "Turned west along the coast instead of south, and stood "
+                    "seven minutes at the foot of the pier",
     "oudeburg":     "Back in the centre at 17:29, three and a half hours before "
                     "the evening ride",
 }
