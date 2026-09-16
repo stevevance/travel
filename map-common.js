@@ -1,12 +1,24 @@
-/* Shared behaviour for the route maps (Rotterdam, The Hague, Utrecht).
+/* Shared behaviour for the route maps (Rotterdam, The Hague, Utrecht, Bruges).
  *
  * Each page supplies its own LINES and STOPS GeoJSON, its own palette of stop
  * icons, and its own copy; everything else - how a map is built, how markers
  * are placed, how the numbered key is assembled and how a click flies to a
- * stop - lives here, so a fix lands on all three pages at once.
+ * stop - lives here, so a fix lands on all four pages at once.
  *
  * Usage, from the page's inline script:
- *     MapKit.render({lines: LINES, stops: STOPS, stopIcon: {...}, quiet: [...]});
+ *     MapKit.render({lines: LINES, stops: STOPS, stopIcon: {...}, quiet: [...],
+ *                    photos: PHOTOS, categoryBy: 'ride', palette: {...}});
+ *
+ * `photos` is optional: a FeatureCollection of points carrying `img`, `time`
+ * and `caption`, drawn as camera dots that open the picture in a popup.
+ *
+ * `categoryBy` and `palette` are optional too, and go together: they say which
+ * leg property the colour keys off and what colours to use. The default is
+ * mode, which is right for every map whose legs differ by mode. Bruges is three
+ * bicycle rides, so mode would paint the whole day one colour; it keys off the
+ * `ride` property instead. Whatever the category is, it drives the line, the
+ * ring on each numbered stop and the number in the key together, so the three
+ * cannot disagree.
  *
  * Non-obvious rules this file exists to hold:
  *
@@ -27,7 +39,11 @@
 
   /* Categorical by MODE, shared across the set so a mode keeps the same colour
      from one page to the next. Validated all-pairs on a light surface; line
-     identity rides on the numbered badges, not on hue. */
+     identity rides on the numbered badges, not on hue.
+
+     This is the default palette, not the only one. A page whose legs are all the
+     same mode - Bruges, three bicycle rides - passes its own `categoryBy` and
+     `palette` so the colour can key off something that actually varies there. */
   var COLOR = {
     metro: '#2a78d6',
     tram:  '#eb6834',
@@ -54,14 +70,17 @@
     garden:  '<path d="M12 21v-8.5"/><path d="M12 12.5C12 9.2 9.3 6.5 6 6.5c0 3.3 2.7 6 6 6z"/><path d="M12 14.5c0-2.8 2.2-5 5-5 0 2.8-2.2 5-5 5z"/><path d="M6.5 21h11"/>',
     bastion: '<path d="M3 21v-7l4.5-4h9L21 14v7"/><path d="M2 21h20"/><path d="M7.5 10V6.5h9V10"/><path d="M10.2 21v-4.6h3.6V21"/>',
     tower:   '<path d="M9 21V6.6L12 2.5l3 4.1V21"/><path d="M7 21h10"/><path d="M11 21v-4.2a1 1 0 0 1 2 0V21"/><path d="M10.6 9.6h2.8M10.6 13.1h2.8"/>',
-    bakfiets:'<circle cx="5.5" cy="16.8" r="3.4"/><circle cx="18.5" cy="16.8" r="3.4"/><path d="M2.6 13.2h5.8V9.1H2.6z"/><path d="M8.4 11 15 16.8"/><path d="M14.2 11.2h3.1l1.2 5.6"/><path d="M12.6 8.4h3.4"/>'
+    bakfiets:'<circle cx="5.5" cy="16.8" r="3.4"/><circle cx="18.5" cy="16.8" r="3.4"/><path d="M2.6 13.2h5.8V9.1H2.6z"/><path d="M8.4 11 15 16.8"/><path d="M14.2 11.2h3.1l1.2 5.6"/><path d="M12.6 8.4h3.4"/>',
+    bike:    '<circle cx="5.6" cy="16.4" r="3.9"/><circle cx="18.4" cy="16.4" r="3.9"/><path d="M5.6 16.4 9.4 8.2h5.1l3.9 8.2"/><path d="M8.2 8.2h3.4"/><path d="M14.5 8.2 12 16.4"/><path d="M15.2 6.1h2.6"/>',
+    camera:  '<path d="M2.8 7.9h4l1.5-2.4h7.4l1.5 2.4h4v10.6h-18.4z"/><circle cx="12" cy="13.1" r="3.5"/>',
+    sea:     '<circle cx="17.2" cy="6.2" r="2.8"/><path d="M2.5 13.2c1.6 0 1.6 1.7 3.2 1.7s1.6-1.7 3.2-1.7 1.6 1.7 3.2 1.7 1.6-1.7 3.2-1.7 1.6 1.7 3.2 1.7"/><path d="M2.5 18c1.6 0 1.6 1.7 3.2 1.7S7.3 18 8.9 18s1.6 1.7 3.2 1.7S13.7 18 15.3 18s1.6 1.7 3.2 1.7"/>'
   };
   var ICON_LABEL = {
     museum:'Museum', church:'Church', ship:'Museum ship', landmark:'Landmark',
     drinks:'Drinks', park:'Park', deer:'Deer park', castle:'Historic site',
     shops:'Shops and cafes', food:'Meal', train:'Rail station', tram:'Tram stop',
     garden:'Botanic gardens', bastion:'Bulwark', tower:'Tower',
-    bakfiets:'Cargo bike'
+    bakfiets:'Cargo bike', bike:'Bicycle', camera:'Photograph', sea:'The sea'
   };
 
   function iconHTML(name, quiet) {
@@ -76,7 +95,22 @@
     var STOP_ICON = cfg.stopIcon || {};
     var QUIET = new Set(cfg.quiet || []);
     var VIEWS = cfg.views || {};
+    /* Optional: a FeatureCollection of points, each with an `img` (a path
+       relative to the page), a `time` and an optional `caption`. Drawn as small
+       camera dots that open the picture in a popup. */
+    var PHOTOS = cfg.photos || null;
+    /* Which leg property the colour, the key's numbers and the stop rings all
+       key off, and the colours to use for it. Defaults to mode, which is what
+       every map but Bruges wants. */
+    var CATEGORY = cfg.categoryBy || 'mode';
+    var PALETTE  = cfg.palette || COLOR;
     var q = new URLSearchParams(location.search);
+
+    /* null, not a fallback colour, so a caller can tell "no colour for this"
+       from "grey" and leave the element's own stylesheet rule alone. */
+    function colorFor(v) {
+      return Object.prototype.hasOwnProperty.call(PALETTE, v) ? PALETTE[v] : null;
+    }
 
     /* The panel is always shown. nohead drops just its title, for the composed
        sheet where the title already sits in the page header. */
@@ -126,6 +160,7 @@
     }
 
     var MARKERS = {};
+    var PHOTO_MARKERS = [];
     function stopByN(n) {
       return STOPS.features.find(function (s) { return s.properties.n === n; });
     }
@@ -136,6 +171,13 @@
                  offset: panelOffset()});
       var m = MARKERS[n];
       if (m && !m.getPopup().isOpen()) m.togglePopup();
+    }
+    function flyToPhoto(i) {
+      var m = PHOTO_MARKERS[i];
+      if (!m) return;
+      map.flyTo({center: m.getLngLat(), zoom: 15, speed: 1.3,
+                 offset: panelOffset()});
+      if (!m.getPopup().isOpen()) m.togglePopup();
     }
     function flyToFeatures(pred) {
       var b = new maplibregl.LngLatBounds();
@@ -160,14 +202,17 @@
       });
       /* Two line layers, not one: line-dasharray is not data-driven, so the
          dotted walking legs need their own filtered layer. */
+      /* Built from the palette rather than written out, so a page that supplies
+         its own set of categories does not also have to be listed here. */
+      var lineColor = ['match', ['get', CATEGORY]];
+      Object.keys(PALETTE).forEach(function (k) { lineColor.push(k, PALETTE[k]); });
+      lineColor.push(COLOR.walk);          // anything uncategorised
       map.addLayer({
         id: 'legs-line', type: 'line', source: 'legs',
         filter: ['!=', ['get', 'mode'], 'walk'],
         layout: {'line-cap': 'round', 'line-join': 'round'},
         paint: {
-          'line-color': ['match', ['get', 'mode'],
-            'metro', COLOR.metro, 'tram', COLOR.tram, 'train', COLOR.train,
-            'bike', COLOR.bike, COLOR.walk],
+          'line-color': lineColor,
           'line-width': ['interpolate', ['linear'], ['zoom'], 9, 2.4, 12, 4, 15, 7, 17, 10]
         }
       });
@@ -182,6 +227,35 @@
         }
       });
 
+      /* Pictures, if the page has any. They sit under the numbered stops in the
+         DOM order MapLibre gives markers, so a photo taken at a stop never
+         covers the stop's own dot. The image is only fetched when its popup
+         opens - twenty full-width JPEGs on load would cost more than the map. */
+      if (PHOTOS) {
+        PHOTOS.features.forEach(function (f) {
+          var p = f.properties;
+          var el = document.createElement('div');
+          el.className = 'photodot';
+          el.innerHTML = iconHTML('camera', false);
+          el.title = p.time + (p.caption ? ' - ' + p.caption : '');
+          var popup = new maplibregl.Popup({offset: 14, closeButton: false,
+                                            maxWidth: '300px'});
+          popup.on('open', function () {
+            var img = popup.getElement().querySelector('img[data-src]');
+            if (img) { img.src = img.dataset.src; img.removeAttribute('data-src'); }
+          });
+          popup.setHTML(
+            '<figure class="photo">'
+            + '<img data-src="' + p.img + '" alt="'
+            + (p.caption || 'Photograph taken at ' + p.time) + '">'
+            + '<figcaption><b>' + p.time + '</b>'
+            + (p.caption ? '<span>' + p.caption + '</span>' : '')
+            + '</figcaption></figure>');
+          PHOTO_MARKERS.push(new maplibregl.Marker({element: el})
+            .setLngLat(f.geometry.coordinates).setPopup(popup).addTo(map));
+        });
+      }
+
       /* One numbered marker per stop, ringed in the colour of how you arrived.
          Do not give .stopdot a position of its own - see the note at the top. */
       STOPS.features.forEach(function (f) {
@@ -191,6 +265,10 @@
         var el = document.createElement('div');
         el.className = 'stopdot ' + p.arrive;
         el.textContent = p.n;
+        /* A page with its own palette rings the dot from it; without one the
+           .stopdot.<mode> rule in map-common.css still does the work. */
+        var ring = colorFor(p.arrive);
+        if (ring) el.style.borderColor = ring;
         /* Only the places we stopped get a glyph on the map; transit platforms
            would just crowd the dense clusters. */
         if (icon && !quiet) {
@@ -260,11 +338,11 @@
       var p = f.properties;
       if (i === 0) {
         var origin = stopByN(p.from_n);
-        rows.push({n: p.from_n, mode: p.mode, name: p.from,
+        rows.push({n: p.from_n, cat: p[CATEGORY], name: p.from,
                    via: (origin && origin.properties.note) || null});
       }
       var seen = rows.some(function (r) { return r.n === p.to_n; });
-      rows.push({n: p.to_n, mode: p.mode,
+      rows.push({n: p.to_n, cat: p[CATEGORY],
                  name: (seen ? 'back to ' + p.to : p.to),
                  via: (p.mode === 'walk' ? 'walk ' : p.line + ' · ') + p.km + ' km'});
     });
@@ -273,8 +351,12 @@
       var ikey = f && STOP_ICON[f.properties.key];
       var quiet = !!(f && QUIET.has(f.properties.key));
       var li = document.createElement('li');
-      li.className = r.mode;
+      li.className = r.cat;
       li.dataset.n = r.n;
+      /* The number's ring is drawn by ::before, which cannot be styled inline,
+         so the colour goes in as a custom property the stylesheet reads. */
+      var num = colorFor(r.cat);
+      if (num) li.style.setProperty('--cat', num);
       li.tabIndex = 0;
       li.setAttribute('role', 'button');
       li.innerHTML = iconHTML(ikey, quiet) + r.name
@@ -288,9 +370,9 @@
       key.appendChild(li);
     });
 
-    return {map: map, markers: MARKERS, bounds: bounds,
-            flyToStop: flyToStop, flyToFeatures: flyToFeatures,
-            iconHTML: iconHTML};
+    return {map: map, markers: MARKERS, photoMarkers: PHOTO_MARKERS,
+            bounds: bounds, flyToStop: flyToStop, flyToPhoto: flyToPhoto,
+            flyToFeatures: flyToFeatures, iconHTML: iconHTML};
   }
 
   global.MapKit = {COLOR: COLOR, ICON_PATHS: ICON_PATHS, ICON_LABEL: ICON_LABEL,

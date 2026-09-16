@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
+<title>Bruges, a day on a hired bike</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="map-common.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="map-common.js"></script>
+<style>
+  /* Only what this page adds to map-common.css. */
+  .rides{
+    margin:12px 0 0;padding:10px 0 0;
+    border-top:1px solid var(--line);
+  }
+  .ride{
+    padding:5px 4px;border-radius:4px;
+    font-size:0.85rem;cursor:pointer;
+  }
+  .ride:hover,.ride:focus-visible{background:rgba(0,0,0,0.05);outline:none;}
+  .ride:focus-visible{box-shadow:0 0 0 2px var(--cat);}
+  /* The bicycle glyph on each row is drawn in that ride's own colour, so the
+     panel and the map agree without the row needing a swatch of its own. */
+  .ride b{display:block;font-weight:600;}
+  .ride b .ico{color:var(--cat);}
+  .ride span{display:block;color:var(--ink-soft);font-size:0.78rem;}
+  .total{
+    margin:8px 0 0;padding:8px 4px 0;
+    border-top:1px solid var(--line);
+    font-size:0.85rem;
+  }
+  .total b{font-weight:600;}
+  .caveat{
+    margin:12px 0 0;padding:10px 0 0;
+    border-top:1px solid var(--line);
+    color:var(--ink-soft);font-size:0.76rem;line-height:1.4;
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel" id="panel">
+  <p class="backlink"><a href="./">&larr; All travel plans</a></p>
+  <p class="kicker">Wednesday, 16 September 2026</p>
+  <h1>Bruges, by hired bike</h1>
+  <div class="legend" id="legend"></div>
+  <p class="iconnote">Every line here was recorded, not routed. Click a step to
+     fly there, or a camera to open the picture taken at that spot.</p>
+  <ol id="key"></ol>
+  <div class="rides" id="rides"></div>
+  <p class="total" id="total"></p>
+  <p class="caveat" id="caveat"></p>
+</div>
+<script>
+const LINES  = __LINES__;
+const STOPS  = __STOPS__;
+const PHOTOS = __PHOTOS__;
+
+/* One bicycle for the whole day, so the icons say what each place was rather
+   than how it was reached. */
+const STOP_ICON = {
+  bluebike:'bike', zeebrugge:'sea', blankenberge:'ship', oudeburg:'landmark'
+};
+
+/* Every leg of this day is the same bicycle, so colouring by mode would paint
+   the whole map one purple. The three recordings are what actually differ, so
+   they are what the colour keys off - a hue per ride, carried by the line, the
+   number in the key and the legend alike.
+
+   Purple, burnt red and teal: far enough apart to survive the common forms of
+   colour blindness, and none of them close to the basemap's water, roads or
+   greens. Purple stays first because it is the set's bicycle colour elsewhere. */
+const RIDE_COLOR = {
+  out:     '#7d4bc2',
+  back:    '#c4452a',
+  meander: '#0f7f8f'
+};
+
+const kit = MapKit.render({lines: LINES, stops: STOPS,
+                           stopIcon: STOP_ICON, photos: PHOTOS,
+                           categoryBy: 'ride', palette: RIDE_COLOR});
+
+/* The three recordings, as against the four legs the key is built from: the
+   ride home is one Strava file, split at Blankenberge pier so the key can say
+   it went west before it went south. Legs and pictures both carry the same
+   `ride` key, so neither list can drift from the other. */
+const RIDES = [
+  {key: 'out',     name: 'Out to the sea'},
+  {key: 'back',    name: 'Back by Blankenberge'},
+  {key: 'meander', name: 'The evening meander'}
+];
+
+/* One legend row per ride, drawn from the same palette the lines use, plus the
+   camera dot. Writing it by hand would be a second place for a colour to live. */
+const legend = document.getElementById('legend');
+RIDES.forEach(r => {
+  const row = document.createElement('div');
+  row.className = 'lg';
+  row.innerHTML = '<span class="sw" style="border-color:' + RIDE_COLOR[r.key]
+                + '"></span> ' + r.name;
+  legend.appendChild(row);
+});
+legend.insertAdjacentHTML('beforeend',
+  '<div class="lg"><span class="sw photo"></span> A photograph, click to see it</div>');
+
+const box = document.getElementById('rides');
+RIDES.forEach(r => {
+  const legs = LINES.features.filter(f => f.properties.ride === r.key);
+  const sum  = k => legs.reduce((s, f) => s + f.properties[k], 0);
+  const shots = PHOTOS.features.filter(p => p.properties.ride === r.key).length;
+
+  const el = document.createElement('div');
+  el.className = 'ride';
+  el.tabIndex = 0;
+  el.setAttribute('role', 'button');
+  el.style.setProperty('--cat', RIDE_COLOR[r.key]);
+  el.innerHTML = '<b>' + MapKit.iconHTML('bike', false) + r.name + ', '
+               + legs[0].properties.start + ' to '
+               + legs[legs.length - 1].properties.end + '</b>'
+               + '<span>' + sum('mi').toFixed(1) + ' mi / '
+               + sum('km').toFixed(1) + ' km in ' + sum('mins') + ' min, '
+               + shots + ' photograph' + (shots === 1 ? '' : 's') + '</span>';
+  const show = () => kit.flyToFeatures(f => f.properties.ride === r.key);
+  el.addEventListener('click', show);
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(); }
+  });
+  box.appendChild(el);
+});
+
+/* Pictures taken off the bike - at the sea, and after it went back - are
+   counted apart from the ones taken riding, so the spacing claim is about the
+   miles it is actually a claim about. */
+const totalMi = LINES.features.reduce((s, f) => s + f.properties.mi, 0);
+const riding  = PHOTOS.features.filter(p => p.properties.ride !== 'stop').length;
+const standing = PHOTOS.features.length - riding;
+document.getElementById('total').innerHTML =
+  '<b>' + totalMi.toFixed(1) + ' miles</b> on the bike, and '
+  + PHOTOS.features.length + ' pictures: ' + riding + ' taken riding, one every '
+  + (totalMi / riding).toFixed(1) + ' miles, and ' + standing
+  + ' standing still.';
+
+document.getElementById('caveat').textContent =
+  'Every line is a Strava recording, simplified and trimmed of the standing '
+  + 'about at each end; nothing here is routed. Pictures are placed by the '
+  + 'phone\u2019s own GPS.';
+</script>
+</body>
+</html>

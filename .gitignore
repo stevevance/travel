@@ -9,3 +9,7 @@ src/**/tilecache/
 # ride; the one-second original is finer than anything published and this repo
 # is public. Keep the file alongside the notes in data/ to rebuild.
 data/**/*.gpx
+
+# Screenshots from the shoot.py checks. Regenerable, and large.
+*_check.png
+*_check_photo.png

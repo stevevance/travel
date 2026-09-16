@@ -1,0 +1,311 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0132.jpg",
+    "file": "IMG_0132.HEIC",
+    "time": "14:32",
+    "ride": "out",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.212403,
+     51.207997
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0145.jpg",
+    "file": "IMG_0145.HEIC",
+    "time": "14:43",
+    "ride": "out",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.228322,
+     51.225405
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0155.jpg",
+    "file": "IMG_0155.HEIC",
+    "time": "14:54",
+    "ride": "out",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.227133,
+     51.257417
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0159.jpg",
+    "file": "IMG_0159.HEIC",
+    "time": "15:02",
+    "ride": "out",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.214167,
+     51.27013
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0171.jpg",
+    "file": "IMG_0171.HEIC",
+    "time": "15:21",
+    "ride": "out",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.2096,
+     51.277378
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0178.jpg",
+    "file": "IMG_0178.HEIC",
+    "time": "15:34",
+    "ride": "out",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.19585,
+     51.309567
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0181.jpg",
+    "file": "IMG_0181.HEIC",
+    "time": "15:44",
+    "ride": "out",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.18608,
+     51.322525
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0183.jpg",
+    "file": "IMG_0183.HEIC",
+    "time": "15:54",
+    "ride": "stop",
+    "stop": "zeebrugge"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.176287,
+     51.328475
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0185.jpg",
+    "file": "IMG_0185.HEIC",
+    "time": "15:55",
+    "ride": "stop",
+    "stop": "zeebrugge"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.176292,
+     51.32848
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0186.jpg",
+    "file": "IMG_0186.HEIC",
+    "time": "15:58",
+    "ride": "stop",
+    "stop": "zeebrugge"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.178087,
+     51.3268
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0191.jpg",
+    "file": "IMG_0191.HEIC",
+    "time": "16:04",
+    "ride": "back",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.166495,
+     51.323903
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0204.jpg",
+    "file": "IMG_0204.HEIC",
+    "time": "16:25",
+    "ride": "back",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.127433,
+     51.316053
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0208.jpg",
+    "file": "IMG_0208.HEIC",
+    "time": "16:41",
+    "ride": "back",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.140089,
+     51.2958
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0215.jpg",
+    "file": "IMG_0215.HEIC",
+    "time": "16:48",
+    "ride": "back",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.152667,
+     51.272562
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0222.jpg",
+    "file": "IMG_0222.HEIC",
+    "time": "16:52",
+    "ride": "back",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.160742,
+     51.265983
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0230.jpg",
+    "file": "IMG_0230.HEIC",
+    "time": "17:07",
+    "ride": "back",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.197275,
+     51.234528
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0235.jpg",
+    "file": "IMG_0235.HEIC",
+    "time": "17:21",
+    "ride": "back",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.214642,
+     51.215947
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/bruges/img_0266.jpg",
+    "file": "IMG_0266.HEIC",
+    "time": "21:05",
+    "ride": "meander",
+    "stop": null
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     3.236637,
+     51.204762
+    ]
+   }
+  }
+ ]
+}

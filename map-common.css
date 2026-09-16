@@ -1,7 +1,7 @@
-/* Shared look for the route maps (Rotterdam, The Hague, Utrecht).
+/* Shared look for the route maps (Rotterdam, The Hague, Utrecht, Bruges).
  *
  * Page-specific copy and one-off blocks stay in each page's own <style>;
- * everything structural lives here so the three maps cannot drift apart.
+ * everything structural lives here so the maps cannot drift apart.
  * The behaviour that goes with it is in map-common.js. */
 
 :root{
@@ -89,11 +89,14 @@ ol li:focus-visible{background:rgba(47,93,90,0.09);outline:none;}
 ol li:focus-visible{box-shadow:0 0 0 2px rgba(47,93,90,0.45);}
 /* Numbering comes from data-n, not a CSS counter: counter() counts list items,
    so any revisited stop pushes the legend out of step with the markers. */
+/* --cat is set per row by map-common.js when the page supplies its own palette;
+   ::before cannot be styled inline, so the colour has to arrive as a property.
+   The .metro/.tram/... rules below still win for the mode-coloured maps. */
 ol li::before{
   content:attr(data-n);
   position:absolute;left:0;top:4px;
   width:19px;height:19px;border-radius:50%;
-  background:#fff;border:2px solid var(--ink-soft);
+  background:#fff;border:2px solid var(--cat, var(--ink-soft));
   font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
   font-size:0.66rem;font-weight:700;
   display:flex;align-items:center;justify-content:center;
@@ -121,6 +124,42 @@ ol li.walk::before{border-color:var(--walk);}
   }
   .panel h1{font-size:1.1rem;}
   .legend{flex-direction:row;flex-wrap:wrap;gap:6px 16px;}
+}
+
+/* A picture taken somewhere on the route. Smaller and quieter than a numbered
+   stop, and added to the map before the stops so it can never cover one.
+   Same rule as .stopdot: no `position` of its own, ever. */
+.photodot{
+  width:17px;height:17px;border-radius:50%;
+  background:rgba(255,253,248,0.97);
+  border:2px solid var(--bike);
+  box-shadow:0 1px 3px rgba(0,0,0,0.28);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+}
+.photodot .ico{width:10px;height:10px;margin:0;stroke-width:2;color:var(--bike);}
+.photodot:hover{background:#fff;transform:scale(1.25);}
+
+/* The picture itself, in the popup. The image is only fetched when the popup
+   opens, so a page with twenty of these still loads like a map. */
+/* Bounded by the viewport as well as by a fixed width, so the popup
+   does not run off the side of a phone. */
+.maplibregl-popup-content figure.photo{margin:0;width:min(260px, 62vw);}
+.maplibregl-popup-content figure.photo img{
+  display:block;width:100%;height:auto;
+  border-radius:3px;background:var(--line);
+}
+.maplibregl-popup-content figure.photo figcaption{padding-top:6px;}
+.maplibregl-popup-content figure.photo b{
+  font-size:0.8rem;font-weight:600;color:var(--ink-soft);
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+}
+.maplibregl-popup-content figure.photo span{display:block;font-size:0.86rem;color:var(--ink);}
+
+/* The legend row for pictures shows the dot itself, not a line swatch. */
+.lg .sw.photo{
+  width:15px;height:15px;border-top:none;border-radius:50%;
+  border:2px solid var(--bike);background:#fff;
 }
 
 /* NOTE: no `position` here, deliberately. MapLibre places markers with
