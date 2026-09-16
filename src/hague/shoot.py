@@ -5,9 +5,9 @@ from playwright.sync_api import sync_playwright
 PAGE = "file://" + os.path.abspath("hague-map.html")
 SHOTS = [
     ("?nohead=1&nochrome=1",                          1400, 1638, "shot_overview.png"),
-    ("?view=denhaag&nopanel=1&labels=1&nochrome=1",    620,  660, "shot_denhaag.png"),
-    ("?view=scheveningen&nopanel=1&labels=1&nochrome=1", 620, 440, "shot_scheveningen.png"),
-    ("?view=delft&nopanel=1&labels=1&nochrome=1",      620,  440, "shot_delft.png"),
+    ("?view=denhaag&labels=1&nochrome=1",    620,  660, "shot_denhaag.png"),
+    ("?view=scheveningen&labels=1&nochrome=1", 620, 440, "shot_scheveningen.png"),
+    ("?view=delft&labels=1&nochrome=1",      620,  440, "shot_delft.png"),
 ]
 
 with sync_playwright() as pw:

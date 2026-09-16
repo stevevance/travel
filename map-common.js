@@ -78,10 +78,8 @@
     var VIEWS = cfg.views || {};
     var q = new URLSearchParams(location.search);
 
-    /* nopanel drops the whole side panel (insets); nohead drops just its title,
-       for the composed sheet where the title already sits in the page header. */
-    var panelEl = document.getElementById('panel');
-    if (q.get('nopanel') && panelEl) panelEl.style.display = 'none';
+    /* The panel is always shown. nohead drops just its title, for the composed
+       sheet where the title already sits in the page header. */
     if (q.get('nohead')) {
       document.querySelectorAll('.panel .kicker, .panel h1')
               .forEach(function (el) { el.style.display = 'none'; });
@@ -119,13 +117,11 @@
        the middle of what is visible, not the middle of the container. */
     function narrowView() { return window.matchMedia('(max-width: 700px)').matches; }
     function padFor() {
-      if (q.get('nopanel')) return {top: 70, bottom: 70, left: 70, right: 70};
       return narrowView()
         ? {top: 50, bottom: Math.round(window.innerHeight * 0.45), left: 30, right: 30}
         : {top: 70, bottom: 70, left: 360, right: 70};
     }
     function panelOffset() {
-      if (q.get('nopanel')) return [0, 0];
       return narrowView() ? [0, -Math.round(window.innerHeight * 0.21)] : [165, 0];
     }
 
