@@ -80,7 +80,8 @@
 
     /* nopanel drops the whole side panel (insets); nohead drops just its title,
        for the composed sheet where the title already sits in the page header. */
-    if (q.get('nopanel')) document.getElementById('panel').style.display = 'none';
+    var panelEl = document.getElementById('panel');
+    if (q.get('nopanel') && panelEl) panelEl.style.display = 'none';
     if (q.get('nohead')) {
       document.querySelectorAll('.panel .kicker, .panel h1')
               .forEach(function (el) { el.style.display = 'none'; });
@@ -244,10 +245,11 @@
       global.__mapReady = false;
       var lastData = Date.now();
       map.on('data', function () { lastData = Date.now(); });
-      map.once('idle', function () { global.__mapReady = true; });
-      setInterval(function () {
-        if (map.loaded() && Date.now() - lastData > 3500) global.__mapReady = true;
+      var readyPoll = setInterval(function () {
+        if (map.loaded() && Date.now() - lastData > 3500) ready();
       }, 500);
+      function ready() { global.__mapReady = true; clearInterval(readyPoll); }
+      map.once('idle', ready);
     });
 
     /* Build the numbered key from the legs, so the list and the map cannot
