@@ -1,4 +1,5 @@
-/* Shared behaviour for the route maps (Rotterdam, The Hague, Utrecht, Bruges).
+/* Shared behaviour for the route maps (Rotterdam, The Hague, Utrecht, Bruges,
+ * and the day out to Alphen, Leiden and Amsterdam).
  *
  * Each page supplies its own LINES and STOPS GeoJSON, its own palette of stop
  * icons, and its own copy; everything else - how a map is built, how markers
@@ -21,6 +22,11 @@
  * cannot disagree.
  *
  * Non-obvious rules this file exists to hold:
+ *
+ *  - The numbered key is built by walking the leg list in order, so a page whose
+ *    legs are not in chronological order gets a key that reads out of sequence
+ *    and loses its first stop. Give every leg a numeric `seq` property and this
+ *    file will sort by it.
  *
  *  - The marker element must NOT carry `position: relative`. MapLibre places
  *    markers with `.maplibregl-marker{position:absolute}` from its own
@@ -49,7 +55,12 @@
     tram:  '#eb6834',
     train: '#1baf7a',
     bike:  '#7d4bc2',
-    walk:  '#5f5b54'
+    walk:  '#5f5b54',
+    /* A sixth slot, added for a day that crossed the IJ twice. Run through the
+       same validator against the five above: it passes against metro, tram,
+       train and bike, and its one warning is against the walk grey, which is
+       drawn dotted and so is never told apart by hue alone. */
+    ferry: '#c4367f'
   };
 
   /* 24x24, stroked in currentColor so one definition serves both the key and
@@ -73,6 +84,7 @@
     bakfiets:'<circle cx="5.5" cy="16.8" r="3.4"/><circle cx="18.5" cy="16.8" r="3.4"/><path d="M2.6 13.2h5.8V9.1H2.6z"/><path d="M8.4 11 15 16.8"/><path d="M14.2 11.2h3.1l1.2 5.6"/><path d="M12.6 8.4h3.4"/>',
     bike:    '<circle cx="5.6" cy="16.4" r="3.9"/><circle cx="18.4" cy="16.4" r="3.9"/><path d="M5.6 16.4 9.4 8.2h5.1l3.9 8.2"/><path d="M8.2 8.2h3.4"/><path d="M14.5 8.2 12 16.4"/><path d="M15.2 6.1h2.6"/>',
     camera:  '<path d="M2.8 7.9h4l1.5-2.4h7.4l1.5 2.4h4v10.6h-18.4z"/><circle cx="12" cy="13.1" r="3.5"/>',
+    ferry:   '<path d="M5.5 13V7.5h13V13"/><path d="M12 7.5V4.5h4"/><path d="M3.5 13h17l-2 4H5.5z"/><path d="M2.5 19c1.6 0 1.6 1.7 3.2 1.7S7.3 19 8.9 19s1.6 1.7 3.2 1.7S13.7 19 15.3 19s1.6 1.7 3.2 1.7"/>',
     sea:     '<circle cx="17.2" cy="6.2" r="2.8"/><path d="M2.5 13.2c1.6 0 1.6 1.7 3.2 1.7s1.6-1.7 3.2-1.7 1.6 1.7 3.2 1.7 1.6-1.7 3.2-1.7 1.6 1.7 3.2 1.7"/><path d="M2.5 18c1.6 0 1.6 1.7 3.2 1.7S7.3 18 8.9 18s1.6 1.7 3.2 1.7S13.7 18 15.3 18s1.6 1.7 3.2 1.7"/>'
   };
   var ICON_LABEL = {
@@ -80,8 +92,18 @@
     drinks:'Drinks', park:'Park', deer:'Deer park', castle:'Historic site',
     shops:'Shops and cafes', food:'Meal', train:'Rail station', tram:'Tram stop',
     garden:'Botanic gardens', bastion:'Bulwark', tower:'Tower',
-    bakfiets:'Cargo bike', bike:'Bicycle', camera:'Photograph', sea:'The sea'
+    bakfiets:'Cargo bike', bike:'Bicycle', camera:'Photograph', sea:'The sea',
+    ferry:'Ferry'
   };
+
+  /* Distances. A page picks its units once, via `units`, and everything that
+     prints a distance - the key, and whatever the page writes itself - goes
+     through here, so the scale bar and the numbers can never disagree. */
+  function fmtDist(km, units) {
+    return units === 'imperial'
+      ? (km * 0.621371).toFixed(1) + ' mi'
+      : km + ' km';
+  }
 
   function iconHTML(name, quiet) {
     if (!name || !ICON_PATHS[name]) return '';
@@ -104,6 +126,7 @@
        every map but Bruges wants. */
     var CATEGORY = cfg.categoryBy || 'mode';
     var PALETTE  = cfg.palette || COLOR;
+    var UNITS    = cfg.units || 'metric';
     var q = new URLSearchParams(location.search);
 
     /* null, not a fallback colour, so a caller can tell "no colour for this"
@@ -138,7 +161,7 @@
                 .forEach(function (el) { el.classList.remove('maplibregl-compact-show'); });
       });
     }
-    map.addControl(new maplibregl.ScaleControl({maxWidth: 110, unit: 'metric'}), 'bottom-left');
+    map.addControl(new maplibregl.ScaleControl({maxWidth: 110, unit: UNITS}), 'bottom-left');
 
     /* Fit to the whole chain of legs so nothing is cropped. */
     var bounds = new maplibregl.LngLatBounds();
@@ -209,11 +232,29 @@
       lineColor.push(COLOR.walk);          // anything uncategorised
       map.addLayer({
         id: 'legs-line', type: 'line', source: 'legs',
-        filter: ['!=', ['get', 'mode'], 'walk'],
+        filter: ['all', ['!=', ['get', 'mode'], 'walk'],
+                        ['!=', ['get', 'source'], 'routed']],
         layout: {'line-cap': 'round', 'line-join': 'round'},
         paint: {
           'line-color': lineColor,
           'line-width': ['interpolate', ['linear'], ['zoom'], 9, 2.4, 12, 4, 15, 7, 17, 10]
+        }
+      });
+      /* A leg that was routed rather than recorded is drawn dashed, in its own
+         mode's colour, so it reads as a reconstruction at a glance and cannot
+         pass for a measurement. Walking is already dotted; this is for the
+         ridden and driven legs that no recording covers - the opening of the
+         Utrecht ride, and the run out of Sloterdijk before Strava was started.
+         It needs its own layer because line-dasharray is not data-driven. */
+      map.addLayer({
+        id: 'legs-routed', type: 'line', source: 'legs',
+        filter: ['all', ['!=', ['get', 'mode'], 'walk'],
+                        ['==', ['get', 'source'], 'routed']],
+        layout: {'line-cap': 'butt', 'line-join': 'round'},
+        paint: {
+          'line-color': lineColor,
+          'line-width': ['interpolate', ['linear'], ['zoom'], 9, 2.4, 12, 4, 15, 7, 17, 10],
+          'line-dasharray': [1.5, 1.0]
         }
       });
       map.addLayer({
@@ -334,6 +375,20 @@
     var chain = LINES.features.filter(function (f) {
       return !f.properties.access && f.properties.from_n !== f.properties.to_n;
     });
+    /* The key is a narrative: row one is where the day started and each row
+       after it is the next place reached. That only holds if the legs are in
+       the order they happened, and a build script has every reason to emit them
+       grouped by source instead - all the rail together, then the walks, then
+       the recordings - which reads out as a day that goes to Amsterdam and then
+       back to a bridge in Alphen, missing its own first stop. A page can settle
+       it by numbering its legs; if every one of them carries a `seq`, that is
+       what the key is built in. Pages without it are unaffected. */
+    if (chain.length && chain.every(function (f) {
+          return typeof f.properties.seq === 'number'; })) {
+      chain = chain.slice().sort(function (a, b) {
+        return a.properties.seq - b.properties.seq;
+      });
+    }
     chain.forEach(function (f, i) {
       var p = f.properties;
       if (i === 0) {
@@ -344,7 +399,8 @@
       var seen = rows.some(function (r) { return r.n === p.to_n; });
       rows.push({n: p.to_n, cat: p[CATEGORY],
                  name: (seen ? 'back to ' + p.to : p.to),
-                 via: (p.mode === 'walk' ? 'walk ' : p.line + ' · ') + p.km + ' km'});
+                 via: (p.mode === 'walk' ? 'walk ' : p.line + ' · ')
+                      + fmtDist(p.km, UNITS)});
     });
     rows.forEach(function (r) {
       var f = stopByN(r.n);
@@ -372,9 +428,10 @@
 
     return {map: map, markers: MARKERS, photoMarkers: PHOTO_MARKERS,
             bounds: bounds, flyToStop: flyToStop, flyToPhoto: flyToPhoto,
-            flyToFeatures: flyToFeatures, iconHTML: iconHTML};
+            flyToFeatures: flyToFeatures, iconHTML: iconHTML,
+            fmtDist: function (km) { return fmtDist(km, UNITS); }};
   }
 
   global.MapKit = {COLOR: COLOR, ICON_PATHS: ICON_PATHS, ICON_LABEL: ICON_LABEL,
-                   iconHTML: iconHTML, render: render};
+                   iconHTML: iconHTML, fmtDist: fmtDist, render: render};
 })(window);

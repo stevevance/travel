@@ -12,6 +12,7 @@ a waypoint and re-running rather than hand-editing a 90 KB file.
 | `rotterdam/` | `rotterdam-map.html` |
 | `utrecht/` | `utrecht-map.html`, plus research scripts behind `utrecht-itinerary.html` |
 | `bruges/` | `bruges-map.html`, and the photographs on it |
+| `alphen-leiden-amsterdam/` | `alphen-leiden-amsterdam-map.html` |
 
 Each city directory holds a `template.html` with `__LINES__`/`__STOPS__`
 placeholders and a build script (`build.py`, or `build_html.py` where the
@@ -25,6 +26,12 @@ Bruges is the odd one out twice over. It is the only map with no routed geometry
 at all - three Strava recordings and nothing else - and the only one that carries
 photographs, so its template takes a third placeholder, `__PHOTOS__`.
 
+The day out to Alphen, Leiden and Amsterdam is the odd one out a third way: it is
+the only page that mixes all three sources on one map, the only one with a mode
+the others do not have (`ferry`), and the only one where a single Strava file
+holds more than one mode. Its two walks were never recorded at all and are
+reconstructed from the day's photographs; see below.
+
 ## Data sources
 
 Everything comes from public APIs, with no keys required:
@@ -36,13 +43,15 @@ Everything comes from public APIs, with no keys required:
 - **Nominatim** for geocoding. Their policy requires a contact in the
   User-Agent and a maximum of one request per second; the scripts comply.
 - **Strava GPX exports** for the legs that were measured rather than routed: the
-  Utrecht bakfiets ride in `data/utrecht/`, and all three Bruges rides in
-  `data/bruges/`. Every leg carries a `source` property — `osm`, `routed` or
-  `gps` — and the Utrecht page draws its routed reconstruction dashed so it
-  cannot pass for the recording.
-- **The macOS Photos library**, for the Bruges pictures, read through
-  `osxphotos`. That is the one source not on the public internet, which is why
-  it lives in its own script; see below.
+  Utrecht bakfiets ride in `data/utrecht/`, all three Bruges rides in
+  `data/bruges/`, and the three rides of 20 September in
+  `data/alphen-leiden-amsterdam/`. Every leg carries a `source` property —
+  `osm`, `routed` or `gps` — and both the Utrecht page and the Alphen day draw
+  their routed reconstructions dashed so they cannot pass for a recording.
+- **The macOS Photos library**, read through `osxphotos` - for the Bruges
+  pictures, and on 20 September for the *shape* of two walks that were never
+  recorded. That is the one source not on the public internet, which is why it
+  always lives in its own script; see below.
 
 Cached API responses are gitignored. Deleting them just means the next run
 re-fetches, which takes a few minutes.
@@ -76,8 +85,73 @@ re-fetches, which takes a few minutes.
 - **Check every waypoint dictionary key against a real leg.** Renaming a leg's
   origin without renaming its `VIA` key makes the lookup miss, return an empty
   list, and silently drop the detour with no error.
+- **The key is built by walking the leg list, so legs must be in the order the
+  day happened.** It is far cheaper to compute them grouped by source - all the
+  rail, then the walks, then the recordings - and doing that reads out as Gouda,
+  Amsterdam, then back to a bridge in Alphen, with the first stop of the day
+  missing entirely, because the opening row comes from the first leg's origin.
+  Give every leg a numeric `seq` property: `map-common.js` sorts the key by it
+  whenever all of them have one, so the ordering no longer depends on the build
+  script emitting them in the right order. Pages without `seq` are unaffected.
+- **A photograph's fix is where the camera stood, not where the walk went.**
+  Three of the Leiden stills were taken a street away from the route - one from
+  a quay 60 m off it. As a Valhalla waypoint that is an order rather than a
+  hint, so each one dragged the leg onto the wrong street and made it double
+  back to obey. `photo_walks.py` has a `DROP` table naming them and why; dropping
+  a picture as a *waypoint* does not drop it as evidence.
+- **Valhalla's public instance takes ten locations and refuses the eleventh**
+  with a bare `400 Bad Request`. Its error body says which limit was hit, so
+  surface it - a leg that has grown past ten waypoints needs one removed, not
+  another added, which is usually the right answer anyway.
+- **A routed leg is drawn dashed.** `map-common.js` gives any leg whose `source`
+  is `routed` its own dashed layer in its mode's colour, so a reconstruction
+  cannot pass for a recording. Walking was always dotted; this covers the ridden
+  legs no recording reaches - the opening of the Utrecht ride, and the run out
+  of Sloterdijk before Strava was started.
+- **A page can ask for imperial units.** Pass `units: 'imperial'` to
+  `MapKit.render` and the scale bar and every distance in the key switch
+  together; `kit.fmtDist` is there so a page's own copy uses the same units.
+  Distances stay in kilometres in the data either way.
+- **A GPS trace through a tunnel is a guess, not a route.** Both Rotterdam rides
+  cross under the station in the Provenierstunnel, and the receiver filled the
+  half-minute with a zigzag across the platforms, teleporting at 136 and
+  194 km/h. Look for the speed spike: it is the reliable tell, and it brackets
+  exactly the stretch worth replacing. Anchor on the tunnel's portals, swap the
+  blacked-out fixes for the OSM way, and say in the copy that you did - a `gps`
+  leg that is quietly part OSM is the kind of thing this repo should not ship
+  silently.
+- **A sick Overpass mirror accepts the connection and then says nothing.**
+  `kumi.systems` hung for minutes at a stretch while `overpass-api.de` answered
+  the same query in two seconds, and a 300 s read timeout turned that into a
+  nine-minute build. 90 s is plenty: the point of the fallback is to ask the
+  other mirror, not to wait out the first one.
 
 ## Photographs
+
+Two different jobs here, and they are worth keeping apart. Bruges *publishes*
+pictures. The Alphen day does not publish any: it uses their GPS fixes only to
+work out where two unrecorded walks went, and ships the routed line. Nothing
+from the camera roll reaches that page.
+
+### Walks reconstructed from where pictures were taken
+
+`alphen-leiden-amsterdam/photo_walks.py` takes each still inside a bounding box
+in time order, treats its fix as a waypoint, and asks Valhalla for the
+pedestrian route between them. It writes the committed `walks.geojson`, so a
+clone with no Photos library and no network can still rebuild the page, and the
+lines are drawn dotted like every other walk so they cannot pass for
+measurements. It found the Alphen walk's turn 40 m from the Koningin Julianabrug
+and the Leiden walk's 1 m from the cafe door.
+
+Its one trap is *not* the Bruges trap. This library holds two rows for several
+pictures: one with a real `+02:00` offset and one written in UTC with no offset
+at all. They are the same instant - but printed with `strftime` the UTC rows
+read as pictures taken two hours before the frame before them, which is exactly
+what the Bruges fault looks like. Parse timezone-aware, convert to CEST before
+comparing or showing, and collapse duplicate rows preferring the one that states
+its offset. Do not "correct" them.
+
+### Pictures published on a page
 
 `bruges/pick_photos.py` is deliberately a separate run from `bruges/build.py`.
 It needs a Mac, `osxphotos` and the actual Photos library; `build.py` needs only

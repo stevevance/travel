@@ -13,3 +13,7 @@ data/**/*.gpx
 # Screenshots from the shoot.py checks. Regenerable, and large.
 *_check.png
 *_check_photo.png
+
+# The one coordinate this repo must not publish: the radius around home that
+# the two Rotterdam rides are clipped to. build.py needs it; git must not have it.
+data/**/private.json

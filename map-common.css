@@ -1,4 +1,5 @@
-/* Shared look for the route maps (Rotterdam, The Hague, Utrecht, Bruges).
+/* Shared look for the route maps (Rotterdam, The Hague, Utrecht, Bruges,
+ * and the day out to Alphen, Leiden and Amsterdam).
  *
  * Page-specific copy and one-off blocks stay in each page's own <style>;
  * everything structural lives here so the maps cannot drift apart.
@@ -17,6 +18,11 @@
   --train:#1baf7a;
   --bike:#7d4bc2;
   --walk:#5f5b54;
+  /* Added for the day with two IJ crossings on it. Checked with the same
+     validator against the five above: it clears every one of them, and its only
+     close call is against the walk grey (CVD dE 7.2), which is already told
+     apart by being dotted rather than solid. */
+  --ferry:#c4367f;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;height:100%;}
@@ -58,6 +64,7 @@ h1{font-size:1.3rem;margin:0 0 10px;font-weight:600;letter-spacing:-0.01em;line-
 .sw.tram{border-color:var(--tram);}
 .sw.train{border-color:var(--train);}
 .sw.bike{border-color:var(--bike);}
+.sw.ferry{border-color:var(--ferry);}
 .sw.walk{border-top-style:dotted;border-top-width:4px;border-color:var(--walk);}
 
 .ico{
@@ -182,6 +189,7 @@ ol li.walk::before{border-color:var(--walk);}
 .stopdot.tram{border-color:var(--tram);}
 .stopdot.train{border-color:var(--train);}
 .stopdot.bike{border-color:var(--bike);}
+.stopdot.ferry{border-color:var(--ferry);}
 .stopdot.walk{border-color:var(--walk);}
 
 /* A small glyph clipped to the marker, so the map reads on its own when the

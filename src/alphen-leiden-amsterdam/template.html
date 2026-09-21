@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
+<title>Alphen a/d Rijn, Leiden, and Amsterdam</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="map-common.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="map-common.js"></script>
+<style>
+  /* Only what this page adds to map-common.css. */
+  .ridehead{
+    margin:14px 0 2px;padding:10px 0 0;
+    border-top:1px solid var(--line);
+    font-size:0.82rem;font-weight:600;
+    text-transform:uppercase;letter-spacing:0.09em;
+    color:var(--ink-soft);
+    font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  }
+  .rides{margin:0;}
+  .ride{
+    padding:5px 4px;border-radius:4px;
+    font-size:0.85rem;cursor:pointer;
+  }
+  .ride:hover,.ride:focus-visible{background:rgba(0,0,0,0.05);outline:none;}
+  .ride:focus-visible{box-shadow:0 0 0 2px var(--cat);}
+  .ride b{display:block;font-weight:600;}
+  .ride b .ico{color:var(--cat);}
+  .ride span{display:block;color:var(--ink-soft);font-size:0.78rem;}
+  .totalhead{
+    margin:10px 0 4px;padding:8px 4px 0;
+    border-top:1px solid var(--line);
+    font-size:0.85rem;
+  }
+  .totalhead b{font-weight:600;}
+  .total{
+    margin:0;padding:0 4px;
+    list-style:none;font-size:0.85rem;
+  }
+  .total li{
+    display:flex;align-items:baseline;gap:8px;
+    padding:1px 0;color:var(--ink-soft);
+  }
+  /* The legend's own swatch, so a row and its line agree on color. */
+  .total .sw{width:16px;}
+  .total b{font-weight:600;color:var(--ink);}
+  .caveat{
+    margin:12px 0 0;padding:10px 0 0;
+    border-top:1px solid var(--line);
+    color:var(--ink-soft);font-size:0.76rem;line-height:1.4;
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel" id="panel">
+  <p class="backlink"><a href="./">&larr; All travel plans</a></p>
+  <p class="kicker">Sunday, 20 September 2026</p>
+  <h1>Alphen a/d Rijn, Leiden, and Amsterdam</h1>
+  <div class="legend">
+    <div class="lg"><span class="sw train"></span> By train</div>
+    <div class="lg"><span class="sw metro"></span> Metro 50</div>
+    <div class="lg"><span class="sw ferry"></span> By ferry</div>
+    <div class="lg"><span class="sw bike"></span> By bicycle</div>
+    <div class="lg"><span class="sw walk"></span> On foot</div>
+  </div>
+  <p class="iconnote">Out and back from Rotterdam Centraal in a day. Icons say
+     what each stop was for; faded glyphs are places we only changed trains.
+     Click any step to fly there.</p>
+  <ol id="key"></ol>
+  <h2 class="ridehead">Zoom to the rides</h2>
+  <div class="rides" id="rides"></div>
+  <p class="totalhead" id="totalhead"></p>
+  <ul class="total" id="total"></ul>
+  <p class="caveat" id="caveat"></p>
+</div>
+<script>
+const LINES = __LINES__;
+const STOPS = __STOPS__;
+
+/* What each stop was for, keyed the same way as STOPS. */
+const STOP_ICON = {
+  wilgenlei:'bike',        rotterdam_cs:'train',  gouda:'train',
+  alphen:'train',          julianabrug:'landmark', leiden_cs:'train',
+  chummy:'drinks',         sloterdijk:'train',    vondelpark:'park',
+  ijveer_cs:'ferry',       ndsm:'ferry',          ijver:'drinks',
+  buiksloterweg:'ferry',   zuid:'train'
+};
+/* Changed trains, nothing more: the only place on the day we did not leave the
+   platform. */
+const QUIET = ['gouda'];
+
+const kit = MapKit.render({lines: LINES, stops: STOPS, stopIcon: STOP_ICON,
+                           quiet: QUIET, units: 'imperial'});
+const mi = km => kit.fmtDist(km);
+
+/* The measured parts of the day, given their own block because they are the
+   only lines here that were recorded rather than routed or traced. The two
+   ferry crossings sit inside the Amsterdam recording, so they are listed with
+   it rather than as journeys of their own. */
+const km = pred => LINES.features.filter(pred)
+                        .reduce((t, f) => t + f.properties.km, 0);
+const rides = [
+  {key:'morning',   icon:'bike',  cat:'bike',
+   title:'Out to Rotterdam Centraal, 12:32 to 12:48',
+   text:'South through Schiebroek and Blijdorp, to catch the Intercity.'},
+  {key:'amsterdam', icon:'bike',  cat:'bike',
+   title:'Around Amsterdam, 16:14 to 19:01',
+   text:'The long one: round the Vondelpark, out to the Zuidas, back through '
+       +'the center, over the IJ to NDSM, a beer at IJver, and back over the '
+       +'water.'},
+  {key:'evening',   icon:'bike',  cat:'bike',
+   title:'Home from Rotterdam Centraal, 20:35 to 20:50',
+   text:'The same way back north, in the dark.'}
+];
+const ridesBox = document.getElementById('rides');
+rides.forEach(r => {
+  const d = document.createElement('div');
+  d.className = 'ride ' + r.cat;
+  d.style.setProperty('--cat', MapKit.COLOR[r.cat]);
+  d.tabIndex = 0;
+  d.setAttribute('role', 'button');
+  const show = () => kit.flyToFeatures(f => f.properties.ride === r.key);
+  d.addEventListener('click', show);
+  d.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(); }
+  });
+  const dist = km(f => f.properties.ride === r.key && f.properties.mode === 'bike'
+                    && f.properties.source === 'gps');
+  d.innerHTML = '<b>' + MapKit.iconHTML(r.icon, false) + r.title + '</b>'
+              + '<span>' + mi(dist) + ' ridden. ' + r.text + '</span>';
+  ridesBox.appendChild(d);
+});
+
+/* The ferries are the reason this page has a mode the others do not. Strava was
+   left running on both boats, so they arrived as bicycle kilometers and had to
+   be cut back out. */
+const ferry = document.createElement('div');
+ferry.className = 'ride ferry';
+ferry.style.setProperty('--cat', MapKit.COLOR.ferry);
+ferry.tabIndex = 0;
+ferry.setAttribute('role', 'button');
+const showFerry = () => kit.flyToFeatures(f => f.properties.mode === 'ferry');
+ferry.addEventListener('click', showFerry);
+ferry.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showFerry(); }
+});
+ferry.innerHTML =
+  '<b>' + MapKit.iconHTML('ferry', false) + 'Twice over the IJ, 17:10 and 18:34</b>'
+  + '<span>' + mi(km(f => f.properties.mode === 'ferry')) + ' of the '
+  + 'Amsterdam recording is a GVB ferry, not a bicycle: out to NDSM from behind '
+  + 'Centraal, and back from Buiksloterweg.</span>';
+ridesBox.appendChild(ferry);
+
+const modes = {};
+LINES.features.forEach(f => {
+  modes[f.properties.mode] = (modes[f.properties.mode] || 0) + f.properties.km;
+});
+const total = Object.values(modes).reduce((a, b) => a + b, 0);
+document.getElementById('totalhead').innerHTML =
+  '<b>' + mi(total) + ' in the day</b>, made up of:';
+document.getElementById('total').innerHTML =
+  [['train','by train'], ['metro','by metro'], ['ferry','by ferry'],
+   ['bike','by bicycle'], ['walk','on foot']]
+    .filter(([m]) => modes[m])
+    .map(([m, label]) => '<li><span class="sw ' + m + '"></span>'
+                       + '<b>' + mi(modes[m]) + '</b> ' + label + '</li>').join('');
+
+document.getElementById('caveat').textContent =
+  'Rail and metro lines are OpenStreetMap route relations, sliced between the '
+  + 'stations actually used; several of these services share their track with '
+  + 'others running the same stops, so the key names the service rather than the '
+  + 'series number. The bicycle and ferry lines are the Strava recordings '
+  + 'themselves, with the crossings identified by testing the track against the '
+  + 'water. The two walks were not recorded at all: they are Valhalla pedestrian '
+  + 'routes through the places the day’s photographs were taken, drawn '
+  + 'dotted like any other walk. Both Rotterdam rides are cut short of home at '
+  + 'either end, and both have the blacked-out half-minute under Rotterdam '
+  + 'Centraal replaced by the Provenierstunnel’s own line. A dashed line is '
+  + 'routed rather than recorded: the run out of Sloterdijk is the part of the '
+  + 'Amsterdam ride from before Strava was started.';
+</script>
+</body>
+</html>
