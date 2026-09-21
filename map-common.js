@@ -142,12 +142,42 @@
               .forEach(function (el) { el.style.display = 'none'; });
     }
 
-    var map = new maplibregl.Map({
+    /* Work out the frame BEFORE the map exists, and hand it to the constructor.
+       A map built without a camera opens at zoom 0 over the Atlantic - the
+       whole world, with the continents repeated across a wide screen - and
+       holds that until the style has loaded and the fitBounds below can run.
+       On a slow connection that is the first thing anyone sees. `bounds`
+       overrides center and zoom in MapLibre's options, so the first frame
+       drawn is already the right place. */
+    function narrowView() { return window.matchMedia('(max-width: 700px)').matches; }
+    function padFor() {
+      return narrowView()
+        ? {top: 50, bottom: Math.round(window.innerHeight * 0.45), left: 30, right: 30}
+        : {top: 70, bottom: 70, left: 360, right: 70};
+    }
+    function panelOffset() {
+      return narrowView() ? [0, -Math.round(window.innerHeight * 0.21)] : [165, 0];
+    }
+
+    /* Fit to the whole chain of legs so nothing is cropped. */
+    var bounds = new maplibregl.LngLatBounds();
+    LINES.features.forEach(function (f) {
+      f.geometry.coordinates.forEach(function (c) { bounds.extend(c); });
+    });
+
+    var opts = {
       container: 'map',
       style: 'https://tiles.openfreemap.org/styles/liberty',
       attributionControl: false,
       hash: false
-    });
+    };
+    /* An empty LngLatBounds would throw; a page with no legs just opens where
+       MapLibre would have put it anyway. */
+    if (!bounds.isEmpty()) {
+      opts.bounds = bounds;
+      opts.fitBoundsOptions = {padding: padFor(), duration: 0};
+    }
+    var map = new maplibregl.Map(opts);
     global.map = map;   // exposed for debugging and scripted views
 
     if (!q.get('nochrome')) {
@@ -163,24 +193,10 @@
     }
     map.addControl(new maplibregl.ScaleControl({maxWidth: 110, unit: UNITS}), 'bottom-left');
 
-    /* Fit to the whole chain of legs so nothing is cropped. */
-    var bounds = new maplibregl.LngLatBounds();
-    LINES.features.forEach(function (f) {
-      f.geometry.coordinates.forEach(function (c) { bounds.extend(c); });
-    });
-
     /* The panel covers part of the canvas - the left third on a wide screen,
-       the bottom on a narrow one - so framing and fly-to both have to aim at
-       the middle of what is visible, not the middle of the container. */
-    function narrowView() { return window.matchMedia('(max-width: 700px)').matches; }
-    function padFor() {
-      return narrowView()
-        ? {top: 50, bottom: Math.round(window.innerHeight * 0.45), left: 30, right: 30}
-        : {top: 70, bottom: 70, left: 360, right: 70};
-    }
-    function panelOffset() {
-      return narrowView() ? [0, -Math.round(window.innerHeight * 0.21)] : [165, 0];
-    }
+       the bottom on a narrow one - so framing and fly-to both aim at the middle
+       of what is visible, not the middle of the container. narrowView, padFor
+       and panelOffset are defined above, next to the opening frame they set. */
 
     var MARKERS = {};
     var PHOTO_MARKERS = [];
@@ -329,7 +345,7 @@
       /* ?view=<name> frames a detail inset; default fits the whole day. */
       var v = VIEWS[q.get('view')];
       if (v) map.jumpTo(v);
-      else map.fitBounds(bounds, {padding: padFor(), duration: 0});
+      else if (!bounds.isEmpty()) map.fitBounds(bounds, {padding: padFor(), duration: 0});
 
       /* Stop names drawn in-canvas, for insets with no side panel. MapLibre's
          own collision handling drops any that cannot fit. */
