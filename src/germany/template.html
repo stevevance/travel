@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
+<title>Across Germany, 21 to 27 September</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="map-common.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="map-common.js"></script>
+<style>
+  /* Only what this page adds to map-common.css. */
+  .dayhead{
+    margin:14px 0 2px;padding:10px 0 0;
+    border-top:1px solid var(--line);
+    font-size:0.82rem;font-weight:600;
+    text-transform:uppercase;letter-spacing:0.09em;
+    color:var(--ink-soft);
+    font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  }
+  .days{margin:0 0 10px;}
+  .day{
+    padding:5px 4px;border-radius:4px;
+    font-size:0.85rem;cursor:pointer;
+  }
+  .day:hover,.day:focus-visible{background:rgba(0,0,0,0.05);outline:none;}
+  .day:focus-visible{box-shadow:0 0 0 2px var(--cat);}
+  .day b{display:block;font-weight:600;}
+  .day span{display:block;color:var(--ink-soft);font-size:0.78rem;}
+  .totalhead{
+    margin:10px 0 4px;padding:8px 4px 0;
+    border-top:1px solid var(--line);
+    font-size:0.85rem;
+  }
+  .totalhead b{font-weight:600;}
+  .total{
+    margin:0;padding:0 4px;
+    list-style:none;font-size:0.85rem;
+  }
+  .total li{
+    display:flex;align-items:baseline;gap:8px;
+    padding:1px 0;color:var(--ink-soft);
+  }
+  .total .sw{width:16px;}
+  .total b{font-weight:600;color:var(--ink);}
+  .caveat{
+    margin:12px 0 0;padding:10px 0 0;
+    border-top:1px solid var(--line);
+    color:var(--ink-soft);font-size:0.76rem;line-height:1.4;
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel" id="panel">
+  <p class="backlink"><a href="./">&larr; All travel plans</a></p>
+  <p class="kicker">Monday 21 to Sunday 27 September 2026</p>
+  <h1>Across Germany: Berlin, Bonn, Leipzig and Dresden</h1>
+  <div class="legend">
+    <div class="lg"><span class="sw train"></span> By train: ICE, IC, EC, NS, regional, S-Bahn</div>
+    <div class="lg"><span class="sw metro"></span> By U-Bahn</div>
+    <div class="lg"><span class="sw tram"></span> By tram: Bonn's 66, Leipzig's 15</div>
+    <div class="lg"><span class="sw bus"></span> The Phantasialand shuttle</div>
+    <div class="lg"><span class="sw bike"></span> By bicycle</div>
+    <div class="lg"><span class="sw walk"></span> On foot</div>
+  </div>
+  <p class="iconnote">A week on the rails from Rotterdam to Prague: three days
+     in Berlin, Phantasialand from Bonn, a night in Leipzig and an afternoon in
+     Dresden. The map opens on all of it; the buttons below zoom to a day or a
+     city. Click any step to fly there.</p>
+  <h2 class="dayhead">Zoom to a city</h2>
+  <div class="days" id="cities"></div>
+  <h2 class="dayhead">Zoom to a day</h2>
+  <div class="days" id="days"></div>
+  <ol id="key"></ol>
+  <p class="totalhead" id="totalhead"></p>
+  <ul class="total" id="total"></ul>
+  <p class="caveat" id="caveat"></p>
+</div>
+<script>
+const LINES = __LINES__;
+const STOPS = __STOPS__;
+
+/* What each stop was for, keyed the same way as STOPS. */
+const STOP_ICON = {
+  wilgenlei:'bike',        rotterdam_cs:'train',   utrecht_cs:'train',
+  hilversum:'train',       berlin_hbf:'train',     suedkreuz:'train',
+  hermannstr:'train',      boddinstr:'train',      alexanderplatz:'train',
+  unter_linden:'train',    gesundbrunnen:'train',  flakturm:'tower',
+  mauerpark:'park',        habba:'food',           eberswalder:'train',
+  kotti:'train',           maybachufer:'shops',    schoenlein:'train',
+  bundestag:'landmark',    hkw:'landmark',         potsdamer:'bike',
+  uniqlo:'shops',          u_potsdamer:'train',    technikmuseum:'museum', funkturm:'tower',
+  rewe:'shops',            zait:'food',            charlottenburg:'train',
+  westkreuz:'train',       innotrans:'train',      brlo:'drinks',
+  gleisdreieck:'train',    hermannplatz:'train',   mehringdamm:'train',
+  paradestr:'tower',       sama:'food',            luftbruecke:'train',
+  frankfurt_hbf:'train',   siegburg:'train',       bonn_hbf:'train',
+  bruehl:'train',          phantasialand:'castle', koeln_west:'train',
+  leipzig_hbf:'train',     ibis:'landmark',        markt:'train',
+  bayerischer:'drinks',    wlp:'train',            johannisplatz:'tram',
+  voelki:'tower',          dnb:'bike',             rathaus:'landmark',
+  dresden_hbf:'train',     frauenkirche:'church',  augustusbr:'landmark',
+  altmarkt:'landmark',     praha_hln:'train'
+};
+/* Changes of train and nothing more. */
+const QUIET = ['utrecht_cs', 'suedkreuz', 'hermannstr', 'unter_linden',
+               'eberswalder', 'schoenlein', 'charlottenburg', 'westkreuz',
+               'gleisdreieck', 'u_potsdamer', 'hermannplatz', 'mehringdamm', 'luftbruecke',
+               'frankfurt_hbf', 'siegburg', 'koeln_west', 'markt', 'wlp',
+               'johannisplatz'];
+
+const kit = MapKit.render({lines: LINES, stops: STOPS, stopIcon: STOP_ICON,
+                           quiet: QUIET, units: 'imperial'});
+const mi = km => kit.fmtDist(km);
+const km = pred => LINES.features.filter(pred)
+                        .reduce((t, f) => t + f.properties.km, 0);
+
+const days = [
+  {key:'mon', title:'Monday 21: in from Rotterdam',
+   text:'Bike to Rotterdam Centraal, NS to Hilversum, ICE 145 to Berlin. The '
+       +'evening with a friend: the S15, the Humboldthain flak tower, Mauerpark '
+       +'and Habba Habba.'},
+  {key:'tue', title:'Tuesday 22: across the city',
+   text:'Kottbusser Tor and the Maybachufer market, the Reichstag, a ride '
+       +'through the Tiergarten, the Technikmuseum, a ride out to the '
+       +'Funkturm, dinner at Zait & Za’atar.'},
+  {key:'wed', title:'Wednesday 23: InnoTrans',
+   text:'The Ringbahn out to the fair and back, then by bike to BRLO in the '
+       +'Park am Gleisdreieck.'},
+  {key:'thu', title:'Thursday 24: out to Bonn',
+   text:'The THF Tower and Tempelhofer Feld, lunch at Sama Beirut, then ICE '
+       +'931 to Frankfurt and ICE 624 to Siegburg, both late.'},
+  {key:'fri', title:'Friday 25: Phantasialand',
+   text:'The train to Brühl and the park shuttle, then back by Köln West.'},
+  {key:'sat', title:'Saturday 26: on to Leipzig',
+   text:'The 66 to Siegburg, ICE 1517 and ICE 598 by Frankfurt, then the City '
+       +'Tunnel to the Gosebrauerei at Bayerischer Bahnhof.'},
+  {key:'sun', title:'Sunday 27: Leipzig, Dresden, Prague',
+   text:'Tram 15 to the Völkerschlachtdenkmal and a ride round south '
+       +'Leipzig, IC 2441 to Dresden, the Altstadt, and a late EC to Prague.'},
+  {key:null, title:'The whole week', text:'Rotterdam to Prague.'}
+];
+const cities = [
+  ['berlin', 'Berlin', 'Monday evening to Thursday lunchtime.'],
+  ['bonn', 'Bonn and Brühl', 'Thursday night to Saturday noon, and '
+                            + 'Phantasialand.'],
+  ['leipzig', 'Leipzig', 'Saturday evening and Sunday morning.'],
+  ['dresden', 'Dresden', 'Sunday afternoon, between trains.']
+];
+const btn = (box, title, text, pred) => {
+  const el = document.createElement('div');
+  el.className = 'day';
+  el.style.setProperty('--cat', MapKit.COLOR.train);
+  el.tabIndex = 0;
+  el.setAttribute('role', 'button');
+  const show = () => kit.flyToFeatures(pred);
+  el.addEventListener('click', show);
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(); }
+  });
+  el.innerHTML = '<b>' + title + '</b><span>' + text + '</span>';
+  box.appendChild(el);
+};
+const citiesBox = document.getElementById('cities');
+cities.forEach(([c, title, text]) => {
+  const pred = f => f.properties.city === c;
+  btn(citiesBox, title, mi(km(pred)) + '. ' + text, pred);
+});
+const daysBox = document.getElementById('days');
+days.forEach(d => {
+  const pred = d.key ? f => f.properties.day === d.key : () => true;
+  btn(daysBox, d.title, (d.key ? mi(km(pred)) + '. ' : '') + d.text, pred);
+});
+
+const modes = {};
+LINES.features.forEach(f => {
+  modes[f.properties.mode] = (modes[f.properties.mode] || 0) + f.properties.km;
+});
+const total = Object.values(modes).reduce((a, b) => a + b, 0);
+document.getElementById('totalhead').innerHTML =
+  '<b>' + mi(total) + ' in the week</b>, made up of:';
+document.getElementById('total').innerHTML =
+  [['train','by train'], ['metro','by U-Bahn'], ['tram','by tram'],
+   ['bus','by bus'], ['bike','by bicycle'], ['walk','on foot']]
+    .filter(([m]) => modes[m])
+    .map(([m, label]) => '<li><span class="sw ' + m + '"></span>'
+                       + '<b>' + mi(modes[m]) + '</b> ' + label + '</li>').join('');
+
+document.getElementById('caveat').textContent =
+  'Rail, U-Bahn, S-Bahn, tram and bus lines are OpenStreetMap route '
+  + 'relations, sliced between the stops actually used; where more than one '
+  + 'service runs the same track, the key names what was taken rather than the '
+  + 'relation. Three rides were recorded - two on Tuesday afternoon in Berlin '
+  + 'and one on Sunday morning in Leipzig - and are drawn as recorded. A dashed '
+  + 'line is a ride that was not: Monday\u2019s to Rotterdam Centraal, '
+  + 'Wednesday\u2019s to Gleisdreieck, and Sunday\u2019s back into the center '
+  + 'of Leipzig after Strava was stopped, the last two routed through where '
+  + 'that day\u2019s photographs were taken. Walks are routed too, and drawn '
+  + 'dotted. Legs that were not remembered are the BVG journey planner\u2019s '
+  + 'suggestion or the only route that fits the photographs, and each says so '
+  + 'in its note. Times of day come from the photographs, the recordings and '
+  + 'the tickets; the train delays from Zugfinder.';
+</script>
+</body>
+</html>

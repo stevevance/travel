@@ -1,5 +1,5 @@
 /* Shared behaviour for the route maps (Rotterdam, The Hague, Utrecht, Bruges,
- * and the day out to Alphen, Leiden and Amsterdam).
+ * the day out to Alphen, Leiden and Amsterdam, and the week across Germany).
  *
  * Each page supplies its own LINES and STOPS GeoJSON, its own palette of stop
  * icons, and its own copy; everything else - how a map is built, how markers
@@ -60,7 +60,11 @@
        same validator against the five above: it passes against metro, tram,
        train and bike, and its one warning is against the walk grey, which is
        drawn dotted and so is never told apart by hue alone. */
-    ferry: '#c4367f'
+    ferry: '#c4367f',
+    /* A seventh, for the Phantasialand shuttle on the week across Germany. A
+       dark mustard: well clear in hue of the tram orange and the train green
+       either side of it, and dark enough to hold against the light basemap. */
+    bus:   '#b08500'
   };
 
   /* 24x24, stroked in currentColor so one definition serves both the key and

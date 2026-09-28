@@ -13,6 +13,7 @@ a waypoint and re-running rather than hand-editing a 90 KB file.
 | `utrecht/` | `utrecht-map.html`, plus research scripts behind `utrecht-itinerary.html` |
 | `bruges/` | `bruges-map.html`, and the photographs on it |
 | `alphen-leiden-amsterdam/` | `alphen-leiden-amsterdam-map.html` |
+| `germany/` | `germany-map.html` |
 
 Each city directory holds a `template.html` with `__LINES__`/`__STOPS__`
 placeholders and a build script (`build.py`, or `build_html.py` where the
@@ -32,6 +33,16 @@ the others do not have (`ferry`), and the only one where a single Strava file
 holds more than one mode. Its two walks were never recorded at all and are
 reconstructed from the day's photographs; see below.
 
+The week across Germany is the odd one out by size: seven days on one page,
+Rotterdam to Prague, with Berlin, Bonn, Leipzig and Dresden each given a zoom
+button off a `city` property on the legs. It is the only page with a bus - the
+Phantasialand shuttle - so `map-common` has a seventh mode colour for it. Two of
+its S-Bahn relations are loops - the Ringbahn, S41 and S42 - so its slicer wraps
+past the end of the stitched line rather than reversing, which would be the
+other direction round the Ring. Several of its legs were not remembered at all;
+those are the BVG journey planner's suggestion, or the only route that fits the
+photographs, and say so in their notes.
+
 ## Data sources
 
 Everything comes from public APIs, with no keys required:
@@ -45,7 +56,8 @@ Everything comes from public APIs, with no keys required:
 - **Strava GPX exports** for the legs that were measured rather than routed: the
   Utrecht bakfiets ride in `data/utrecht/`, all three Bruges rides in
   `data/bruges/`, and the three rides of 20 September in
-  `data/alphen-leiden-amsterdam/`. Every leg carries a `source` property —
+  `data/alphen-leiden-amsterdam/`, and the three rides of the week across Germany in `data/germany/`.
+  Every leg carries a `source` property —
   `osm`, `routed` or `gps` — and both the Utrecht page and the Alphen day draw
   their routed reconstructions dashed so they cannot pass for a recording.
 - **The macOS Photos library**, read through `osxphotos` - for the Bruges

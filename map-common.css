@@ -23,6 +23,8 @@
      close call is against the walk grey (CVD dE 7.2), which is already told
      apart by being dotted rather than solid. */
   --ferry:#c4367f;
+  /* The Phantasialand shuttle, on the week across Germany. See map-common.js. */
+  --bus:#b08500;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;height:100%;}
@@ -65,6 +67,7 @@ h1{font-size:1.3rem;margin:0 0 10px;font-weight:600;letter-spacing:-0.01em;line-
 .sw.train{border-color:var(--train);}
 .sw.bike{border-color:var(--bike);}
 .sw.ferry{border-color:var(--ferry);}
+.sw.bus{border-color:var(--bus);}
 .sw.walk{border-top-style:dotted;border-top-width:4px;border-color:var(--walk);}
 
 .ico{
@@ -113,6 +116,7 @@ ol li.tram::before{border-color:var(--tram);}
 ol li.train::before{border-color:var(--train);}
 ol li.bike::before{border-color:var(--bike);}
 ol li.walk::before{border-color:var(--walk);}
+ol li.bus::before{border-color:var(--bus);}
 .via{display:block;color:var(--ink-soft);font-size:0.78rem;}
 
 @media (max-width: 700px){
@@ -190,6 +194,7 @@ ol li.walk::before{border-color:var(--walk);}
 .stopdot.train{border-color:var(--train);}
 .stopdot.bike{border-color:var(--bike);}
 .stopdot.ferry{border-color:var(--ferry);}
+.stopdot.bus{border-color:var(--bus);}
 .stopdot.walk{border-color:var(--walk);}
 
 /* A small glyph clipped to the marker, so the map reads on its own when the
