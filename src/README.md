@@ -35,7 +35,7 @@ holds more than one mode. Its two walks were never recorded at all and are
 reconstructed from the day's photographs; see below.
 
 The Chicago ride is the odd one out in the other direction: it is not on the
-trip and it has not happened. Thirteen places north and west of downtown that
+trip and it has not happened. Twelve places north and west of downtown that
 either hold a new construction permit or have had a story written about them,
 with Valhalla's bicycle route between them and nothing else - so every leg is
 `source: "routed"` and draws dashed, and the page says so in its own copy. It is

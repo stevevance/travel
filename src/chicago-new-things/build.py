@@ -1,4 +1,4 @@
-"""Build the Chicago "new things" ride: thirteen stops, north and west of downtown.
+"""Build the Chicago "new things" ride: twelve stops, north and west of downtown.
 
 The odd one out in this repo in three ways, and all three are worth saying out
 loud rather than discovering from the diff:
@@ -6,7 +6,7 @@ loud rather than discovering from the diff:
   - It is at home, not on the trip. Every other page here is a day somewhere in
     Europe in September 2026; this is Chicago.
   - Nothing has happened yet. There is no recording and no day to trace: it is a
-    route planned around thirteen places that are in the news or hold a new
+    route planned around twelve places that are in the news or hold a new
     construction permit. Every leg is therefore `source: "routed"`, which
     map-common.js draws dashed, so the line cannot pass for a measurement.
   - Its stops are not places to see so much as things being built. The two stop
@@ -29,9 +29,9 @@ VALHALLA = "https://valhalla1.openstreetmap.de/route"
 UA = {"User-Agent": "steven-personal-itinerary-map/1.0 (personal travel notes)"}
 
 # ------------------------------------------------------------------ stops ---
-# Thirteen places, in the order the ride visits them: roughly West Loop out to
-# Garfield Park, north through Humboldt Park and Ukrainian Village, up to Logan
-# Square and Lakeview, then back down through Lincoln Park.
+# Twelve places, in the order the ride visits them: West Loop and West Town,
+# out to Humboldt Park, north through Ukrainian Village to Logan Square and
+# Lakeview, then back down through Lincoln Park.
 #
 # `kind` is "permit" for a site with an issued new construction permit and
 # "news" for somewhere a story has been written about. A permit's coordinate is
@@ -55,15 +55,6 @@ STOPS = [
              "nine-car garage and a rooftop deck. Fully sprinklered.",
       source="Permit issued 22 September 2026",
       link="https://www.chicagocityscape.com/permits.php?pid=3454373"),
- dict(key="kedzie136", kind="permit",
-      lat=41.883969, lng=-87.706355,
-      name="136 N Kedzie Ave, 51 affordable units",
-      where="136 N Kedzie Ave, East Garfield Park",
-      detail="Five storeys, mixed use: ground floor commercial and office "
-             "under 51 affordable dwelling units, twelve indoor parking "
-             "spaces and green roofs.",
-      source="Permit issued 16 September 2026",
-      link="https://www.chicagocityscape.com/permits.php?pid=3436340"),
  dict(key="christiana1033", kind="permit",
       lat=41.900214, lng=-87.710391,
       name="1033 N Christiana Ave, 40 units",
@@ -215,7 +206,7 @@ def valhalla(points, cache):
             headers=UA)
         d = json.load(urllib.request.urlopen(req, timeout=60))
         json.dump(d, open(path, "w"))
-        time.sleep(1.1)          # their policy; thirteen legs is not a hurry
+        time.sleep(1.1)          # their policy; a dozen legs is not a hurry
     out = []
     for lg in d["trip"]["legs"]:
         out.extend(decode6(lg["shape"]))
