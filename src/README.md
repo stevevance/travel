@@ -35,7 +35,7 @@ holds more than one mode. Its two walks were never recorded at all and are
 reconstructed from the day's photographs; see below.
 
 The Chicago ride is the odd one out in the other direction: it is not on the
-trip and it has not happened. Fourteen places north and west of downtown that
+trip and it has not happened. Thirteen places north and west of downtown that
 either hold a new construction permit or have had a story written about them,
 with Valhalla's bicycle route between them and nothing else - so every leg is
 `source: "routed"` and draws dashed, and the page says so in its own copy. It is
@@ -44,6 +44,11 @@ mode, which is why colour is left alone there and two new glyphs - `building`
 and `news` - carry the distinction instead. Its permit coordinates come off the
 permit; its news coordinates are approximate, and the ones that are loosest say
 `~` in the address line. It prints miles.
+
+Its stop numbers come from the order of the list, not from a number typed
+beside each stop, and the count in the page's own copy is filled in by the
+build. Dropping a stop from the middle is then a one-entry diff rather than a
+renumbering of everything after it.
 
 The week across Germany is the odd one out by size: seven days on one page,
 Rotterdam to Prague, with Berlin, Bonn, Leipzig and Dresden each given a zoom

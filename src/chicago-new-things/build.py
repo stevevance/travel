@@ -1,4 +1,4 @@
-"""Build the Chicago "new things" ride: fourteen stops, north and west of downtown.
+"""Build the Chicago "new things" ride: thirteen stops, north and west of downtown.
 
 The odd one out in this repo in three ways, and all three are worth saying out
 loud rather than discovering from the diff:
@@ -6,7 +6,7 @@ loud rather than discovering from the diff:
   - It is at home, not on the trip. Every other page here is a day somewhere in
     Europe in September 2026; this is Chicago.
   - Nothing has happened yet. There is no recording and no day to trace: it is a
-    route planned around fourteen places that are in the news or hold a new
+    route planned around thirteen places that are in the news or hold a new
     construction permit. Every leg is therefore `source: "routed"`, which
     map-common.js draws dashed, so the line cannot pass for a measurement.
   - Its stops are not places to see so much as things being built. The two stop
@@ -29,7 +29,7 @@ VALHALLA = "https://valhalla1.openstreetmap.de/route"
 UA = {"User-Agent": "steven-personal-itinerary-map/1.0 (personal travel notes)"}
 
 # ------------------------------------------------------------------ stops ---
-# Fourteen places, in the order the ride visits them: roughly West Loop out to
+# Thirteen places, in the order the ride visits them: roughly West Loop out to
 # Garfield Park, north through Humboldt Park and Ukrainian Village, up to Logan
 # Square and Lakeview, then back down through Lincoln Park.
 #
@@ -39,7 +39,7 @@ UA = {"User-Agent": "steven-personal-itinerary-map/1.0 (personal travel notes)"}
 # about a project or a block rather than a point, and the ones that say "~" in
 # their address line are the loosest of all.
 STOPS = [
- dict(key="geothermal", kind="news", n=1,
+ dict(key="geothermal", kind="news",
       lat=41.889211, lng=-87.659674,
       name="Geothermal apartment tower, West Loop",
       where="~Halsted & Monroe, West Loop",
@@ -47,7 +47,7 @@ STOPS = [
              "Developers broke ground in July 2026.",
       source="Chicago Sun-Times",
       link="https://chicago.suntimes.com/real-estate/2026/07/28/developers-break-ground-on-chicagos-first-all-electric-geothermal-apartment-tower"),
- dict(key="grand1334", kind="permit", n=2,
+ dict(key="grand1334", kind="permit",
       lat=41.891157, lng=-87.660465,
       name="1334 W Grand Ave, nine units and retail",
       where="1334 W Grand Ave, West Town",
@@ -55,15 +55,7 @@ STOPS = [
              "nine-car garage and a rooftop deck. Fully sprinklered.",
       source="Permit issued 22 September 2026",
       link="https://www.chicagocityscape.com/permits.php?pid=3454373"),
- dict(key="mhub", kind="news", n=3,
-      lat=41.886555, lng=-87.667604,
-      name="mHUB's planned West Side campus",
-      where="~Halsted & Madison, Near West Side",
-      detail="The manufacturing innovation hub is planning a campus larger "
-             "than The 78.",
-      source="Crain's Chicago Business",
-      link="https://www.chicagobusiness.com/real-estate/commercial/ccb-mhub-west-side-expansion-20260722/"),
- dict(key="kedzie136", kind="permit", n=4,
+ dict(key="kedzie136", kind="permit",
       lat=41.883969, lng=-87.706355,
       name="136 N Kedzie Ave, 51 affordable units",
       where="136 N Kedzie Ave, East Garfield Park",
@@ -72,7 +64,7 @@ STOPS = [
              "spaces and green roofs.",
       source="Permit issued 16 September 2026",
       link="https://www.chicagocityscape.com/permits.php?pid=3436340"),
- dict(key="christiana1033", kind="permit", n=5,
+ dict(key="christiana1033", kind="permit",
       lat=41.900214, lng=-87.710391,
       name="1033 N Christiana Ave, 40 units",
       where="1033 N Christiana Ave, Humboldt Park",
@@ -80,7 +72,7 @@ STOPS = [
              "21-car garage, decks, balconies, a lift and 40 bicycle spaces.",
       source="Permit issued 7 August 2026",
       link="https://www.chicagocityscape.com/permits.php?pid=3444527"),
- dict(key="vonhumboldt", kind="news", n=6,
+ dict(key="vonhumboldt", kind="news",
       lat=41.907131, lng=-87.692690,
       name="Von Humboldt School, becoming housing",
       where="Von Humboldt School, Humboldt Park",
@@ -88,7 +80,7 @@ STOPS = [
              "affordable housing, after the project secured city funding.",
       source="Block Club Chicago",
       link="https://blockclubchicago.org/2026/09/29/von-humboldt-school-to-finally-become-affordable-housing-after-project-secures-city-funding/"),
- dict(key="belloakley", kind="permit", n=7,
+ dict(key="belloakley", kind="permit",
       lat=41.909660, lng=-87.684150,
       name="Bell and Oakley, 28 units on one block face",
       where="1532-1541 N Bell and N Oakley, Ukrainian Village",
@@ -97,7 +89,7 @@ STOPS = [
              "day. Rooftop decks, pergolas and detached garages.",
       source="Permits issued 1 September 2026",
       link="https://www.chicagocityscape.com/permits.php?pid=3446889"),
- dict(key="trailhead606", kind="news", n=8,
+ dict(key="trailhead606", kind="news",
       lat=41.913647, lng=-87.687814,
       name="Trailhead apartments on The 606",
       where="~The 606, Wicker Park",
@@ -106,7 +98,7 @@ STOPS = [
              "the blocks either side of the trail.",
       source="Crain's Chicago Business",
       link="https://www.chicagobusiness.com/real-estate/commercial/ccb-lg-development-sells-trailhead-apartments-20260803/"),
- dict(key="california1817", kind="permit", n=9,
+ dict(key="california1817", kind="permit",
       lat=41.914465, lng=-87.696963,
       name="1817 N California Ave, 24 units",
       where="1817 N California Ave, Logan Square",
@@ -114,7 +106,7 @@ STOPS = [
              "and decks or balconies front and rear on every floor.",
       source="Permit issued 15 September 2026",
       link="https://www.chicagocityscape.com/permits.php?pid=3432017"),
- dict(key="hoyne2740", kind="permit", n=10,
+ dict(key="hoyne2740", kind="permit",
       lat=41.931499, lng=-87.678984,
       name="2740 N Hoyne Ave, 59 units",
       where="2740 N Hoyne Ave, Logan Square",
@@ -122,7 +114,7 @@ STOPS = [
              "one of the larger mid-rises permitted around here this year.",
       source="Permit issued 4 August 2026",
       link="https://www.chicagocityscape.com/permits.php?pid=3385125"),
- dict(key="belmont917", kind="permit", n=11,
+ dict(key="belmont917", kind="permit",
       lat=41.939829, lng=-87.652243,
       name="917 W Belmont Ave, 46 units and retail",
       where="917 W Belmont Ave, Lakeview",
@@ -131,7 +123,7 @@ STOPS = [
              "six parking spaces.",
       source="Permit issued 25 August 2026",
       link="https://www.chicagocityscape.com/permits.php?pid=3449108"),
- dict(key="comed", kind="news", n=12,
+ dict(key="comed", kind="news",
       lat=41.932245, lng=-87.656508,
       name="The proposed ComEd substation",
       where="~Diversey & Clark, Lincoln Park",
@@ -139,7 +131,7 @@ STOPS = [
              "alternative sites they put forward for the substation.",
       source="Chicago Sun-Times",
       link="https://chicago.suntimes.com/real-estate/2026/09/24/lincoln-park-residents-rally-comed-substation"),
- dict(key="parker", kind="news", n=13,
+ dict(key="parker", kind="news",
       lat=41.923305, lng=-87.638179,
       name="Francis W. Parker School expansion",
       where="Francis W. Parker School, Lincoln Park",
@@ -147,7 +139,7 @@ STOPS = [
              "objections from neighbours.",
       source="Chicago Sun-Times",
       link="https://chicago.suntimes.com/real-estate/2026/09/17/francis-w-parker-school-expansion-plan-commission-ire-neighbors"),
- dict(key="clybourn1720", kind="news", n=14,
+ dict(key="clybourn1720", kind="news",
       lat=41.912139, lng=-87.651663,
       name="1720 N Clybourn Ave",
       where="1720 N Clybourn Ave, Lincoln Park",
@@ -156,6 +148,11 @@ STOPS = [
       source="Chicago YIMBY",
       link="https://chicagoyimby.com/2026/07/residential-development-revealed-at-1720-north-clybourn-avenue-in-lincoln-park.html"),
 ]
+# The number on a stop is where it falls in the ride, not something typed next
+# to it: a stop dropped from the middle used to mean renumbering every one after
+# it by hand, which is a diff no one can check.
+for i, s_ in enumerate(STOPS):
+    s_["n"] = i + 1
 BY_KEY = {s["key"]: s for s in STOPS}
 
 # Waypoints that only shape a leg; they are not stops and get no marker. The
@@ -300,6 +297,9 @@ tpl = tpl.replace("__ICONS__", json.dumps(icons, separators=(",", ":")))
 # letting a hand-typed number drift away from the route after a via is moved.
 miles = sum(f["properties"]["km"] for f in features) / 1.609344
 tpl = tpl.replace("__MILES__", f"{miles:.0f}")
+WORDS = {11: "Eleven", 12: "Twelve", 13: "Thirteen", 14: "Fourteen",
+         15: "Fifteen", 16: "Sixteen", 17: "Seventeen", 18: "Eighteen"}
+tpl = tpl.replace("__COUNT__", WORDS.get(len(STOPS), str(len(STOPS))))
 out = os.path.join(ROOT, "chicago-new-things-map.html")
 open(out, "w").write(tpl)
 
