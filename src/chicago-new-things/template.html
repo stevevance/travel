@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
+<title>Chicago, a ride past the new things</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="map-common.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="map-common.js"></script>
+<style>
+  /* Only what this page adds to map-common.css. */
+  /* The route is planned, not ridden, so its swatch is dashed like the line. */
+  .sw.planned{border-top-style:dashed;}
+  /* The two legend rows that are glyphs rather than colours: a stop is either
+     a permit or a story, and with one mode on the map the glyph is the only
+     thing distinguishing them. */
+  .lg .ico{width:15px;height:15px;margin:0;flex:none;}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel" id="panel">
+  <p class="backlink"><a href="./">&larr; All travel plans</a></p>
+  <p class="kicker">October 2026 &middot; a day at home, not yet ridden</p>
+  <h1>Chicago, a ride past the new things</h1>
+  <div class="legend">
+    <div class="lg"><span class="sw bike planned"></span> The planned route, by bike</div>
+    <div class="lg" id="lg-permit">New construction permit</div>
+    <div class="lg" id="lg-news">In the news</div>
+  </div>
+  <p class="iconnote">Fourteen places north and west of downtown that are
+     either being built or being argued about, __MILES__ miles end to end.
+     Nothing here has been ridden: the line is Valhalla's bicycle route between
+     the stops, drawn dashed because it is a plan rather than a recording, and
+     the pins on the news stories are approximate. Click any step to fly
+     there.</p>
+  <ol id="key"></ol>
+</div>
+<script>
+const LINES = __LINES__;
+const STOPS = __STOPS__;
+
+/* A building for a site with an issued permit, a newspaper for a story. Built
+   in the build script from each stop's `kind`, so the glyph and the legend
+   cannot drift apart from the data. */
+const STOP_ICON = __ICONS__;
+
+const kit = MapKit.render({lines: LINES, stops: STOPS, stopIcon: STOP_ICON,
+                           units: 'imperial'});
+
+/* The legend's two glyph rows, drawn from the same icon set as the markers. */
+document.getElementById('lg-permit')
+        .insertAdjacentHTML('afterbegin', kit.iconHTML('building'));
+document.getElementById('lg-news')
+        .insertAdjacentHTML('afterbegin', kit.iconHTML('news'));
+
+/* map-common fills the first key row's `via` from the origin stop's note. On
+   every other page that note is a short line; here it is a paragraph with a
+   link, which is right in a popup and far too long for a one-line key row.
+   Nothing else writes to that slot, so the page replaces it. */
+const firstVia = document.querySelector('#key li .via');
+if (firstVia) firstVia.textContent = 'start of the ride';
+</script>
+</body>
+</html>

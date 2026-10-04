@@ -14,6 +14,7 @@ a waypoint and re-running rather than hand-editing a 90 KB file.
 | `bruges/` | `bruges-map.html`, and the photographs on it |
 | `alphen-leiden-amsterdam/` | `alphen-leiden-amsterdam-map.html` |
 | `germany/` | `germany-map.html` |
+| `chicago-new-things/` | `chicago-new-things-map.html` |
 
 Each city directory holds a `template.html` with `__LINES__`/`__STOPS__`
 placeholders and a build script (`build.py`, or `build_html.py` where the
@@ -32,6 +33,17 @@ the only page that mixes all three sources on one map, the only one with a mode
 the others do not have (`ferry`), and the only one where a single Strava file
 holds more than one mode. Its two walks were never recorded at all and are
 reconstructed from the day's photographs; see below.
+
+The Chicago ride is the odd one out in the other direction: it is not on the
+trip and it has not happened. Fourteen places north and west of downtown that
+either hold a new construction permit or have had a story written about them,
+with Valhalla's bicycle route between them and nothing else - so every leg is
+`source: "routed"` and draws dashed, and the page says so in its own copy. It is
+the first page where the stops differ in kind rather than the legs differing in
+mode, which is why colour is left alone there and two new glyphs - `building`
+and `news` - carry the distinction instead. Its permit coordinates come off the
+permit; its news coordinates are approximate, and the ones that are loosest say
+`~` in the address line. It prints miles.
 
 The week across Germany is the odd one out by size: seven days on one page,
 Rotterdam to Prague, with Berlin, Bonn, Leipzig and Dresden each given a zoom
@@ -120,6 +132,13 @@ re-fetches, which takes a few minutes.
   cannot pass for a recording. Walking was always dotted; this covers the ridden
   legs no recording reaches - the opening of the Utrecht ride, and the run out
   of Sloterdijk before Strava was started.
+- **The first key row's `via` is the origin stop's note.** On every page but
+  one that note is a short line and reads fine there. The Chicago ride puts a
+  whole paragraph and a link in each note, because that is what its popups are
+  for, and the first row then grows a paragraph nothing else would put there.
+  That page overwrites the slot after `render` returns; a new page with long
+  notes will need the same two lines.
+
 - **A page can ask for imperial units.** Pass `units: 'imperial'` to
   `MapKit.render` and the scale bar and every distance in the key switch
   together; `kit.fmtDist` is there so a page's own copy uses the same units.

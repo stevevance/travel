@@ -89,7 +89,13 @@
     bike:    '<circle cx="5.6" cy="16.4" r="3.9"/><circle cx="18.4" cy="16.4" r="3.9"/><path d="M5.6 16.4 9.4 8.2h5.1l3.9 8.2"/><path d="M8.2 8.2h3.4"/><path d="M14.5 8.2 12 16.4"/><path d="M15.2 6.1h2.6"/>',
     camera:  '<path d="M2.8 7.9h4l1.5-2.4h7.4l1.5 2.4h4v10.6h-18.4z"/><circle cx="12" cy="13.1" r="3.5"/>',
     ferry:   '<path d="M5.5 13V7.5h13V13"/><path d="M12 7.5V4.5h4"/><path d="M3.5 13h17l-2 4H5.5z"/><path d="M2.5 19c1.6 0 1.6 1.7 3.2 1.7S7.3 19 8.9 19s1.6 1.7 3.2 1.7S13.7 19 15.3 19s1.6 1.7 3.2 1.7"/>',
-    sea:     '<circle cx="17.2" cy="6.2" r="2.8"/><path d="M2.5 13.2c1.6 0 1.6 1.7 3.2 1.7s1.6-1.7 3.2-1.7 1.6 1.7 3.2 1.7 1.6-1.7 3.2-1.7 1.6 1.7 3.2 1.7"/><path d="M2.5 18c1.6 0 1.6 1.7 3.2 1.7S7.3 18 8.9 18s1.6 1.7 3.2 1.7S13.7 18 15.3 18s1.6 1.7 3.2 1.7"/>'
+    sea:     '<circle cx="17.2" cy="6.2" r="2.8"/><path d="M2.5 13.2c1.6 0 1.6 1.7 3.2 1.7s1.6-1.7 3.2-1.7 1.6 1.7 3.2 1.7 1.6-1.7 3.2-1.7 1.6 1.7 3.2 1.7"/><path d="M2.5 18c1.6 0 1.6 1.7 3.2 1.7S7.3 18 8.9 18s1.6 1.7 3.2 1.7S13.7 18 15.3 18s1.6 1.7 3.2 1.7"/>',
+    /* Two more, for the Chicago ride, where every stop is a thing being built
+       or a thing being argued about rather than a place to go. That page is one
+       mode throughout, so colour cannot tell its two sorts of stop apart and
+       the glyph has to. */
+    building:'<path d="M3.5 21V6.8h8.2V21"/><path d="M11.7 21V11.4h8.8V21"/><path d="M2 21h20"/><path d="M6.1 9.9h3M6.1 13.3h3M6.1 16.7h3"/><path d="M14.6 14.4h3.1M14.6 17.6h3.1"/>',
+    news:    '<path d="M3 5.6h13.6v15.1H4.5A1.5 1.5 0 0 1 3 19.2z"/><path d="M16.6 8.9h4.4v10.3a1.5 1.5 0 0 1-1.5 1.5"/><path d="M5.9 8.8h7.8M5.9 11.9h7.8M5.9 15h7.8M5.9 18.1h4.9"/>'
   };
   var ICON_LABEL = {
     museum:'Museum', church:'Church', ship:'Museum ship', landmark:'Landmark',
@@ -97,7 +103,7 @@
     shops:'Shops and cafes', food:'Meal', train:'Rail station', tram:'Tram stop',
     garden:'Botanic gardens', bastion:'Bulwark', tower:'Tower',
     bakfiets:'Cargo bike', bike:'Bicycle', camera:'Photograph', sea:'The sea',
-    ferry:'Ferry'
+    ferry:'Ferry', building:'New construction permit', news:'In the news'
   };
 
   /* Distances. A page picks its units once, via `units`, and everything that
