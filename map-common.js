@@ -169,11 +169,14 @@
       return narrowView() ? [0, -Math.round(window.innerHeight * 0.21)] : [165, 0];
     }
 
-    /* Fit to the whole chain of legs so nothing is cropped. */
+    /* Fit to the whole chain of legs so nothing is cropped - or, when a page
+       passes `fitTo`, to the legs it picks. Prague uses it to open on the city
+       and leave the airport bus to run off the edge. */
     var bounds = new maplibregl.LngLatBounds();
-    LINES.features.forEach(function (f) {
-      f.geometry.coordinates.forEach(function (c) { bounds.extend(c); });
-    });
+    LINES.features.filter(cfg.fitTo || function () { return true; })
+      .forEach(function (f) {
+        f.geometry.coordinates.forEach(function (c) { bounds.extend(c); });
+      });
 
     var opts = {
       container: 'map',

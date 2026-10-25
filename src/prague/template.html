@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
+<title>Prague, 27 to 30 September</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="map-common.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="map-common.js"></script>
+<style>
+  /* Only what this page adds to map-common.css. */
+  .dayhead{
+    margin:14px 0 2px;padding:10px 0 0;
+    border-top:1px solid var(--line);
+    font-size:0.82rem;font-weight:600;
+    text-transform:uppercase;letter-spacing:0.09em;
+    color:var(--ink-soft);
+    font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  }
+  .days{margin:0 0 10px;}
+  .day{
+    padding:5px 4px;border-radius:4px;
+    font-size:0.85rem;cursor:pointer;
+  }
+  .day:hover,.day:focus-visible{background:rgba(0,0,0,0.05);outline:none;}
+  .day:focus-visible{box-shadow:0 0 0 2px var(--cat);}
+  .day b{display:block;font-weight:600;}
+  .day span{display:block;color:var(--ink-soft);font-size:0.78rem;}
+  .totalhead{
+    margin:10px 0 4px;padding:8px 4px 0;
+    border-top:1px solid var(--line);
+    font-size:0.85rem;
+  }
+  .totalhead b{font-weight:600;}
+  .total{
+    margin:0;padding:0 4px;
+    list-style:none;font-size:0.85rem;
+  }
+  .total li{
+    display:flex;align-items:baseline;gap:8px;
+    padding:1px 0;color:var(--ink-soft);
+  }
+  .total .sw{width:16px;}
+  .total b{font-weight:600;color:var(--ink);}
+  .caveat{
+    margin:12px 0 0;padding:10px 0 0;
+    border-top:1px solid var(--line);
+    color:var(--ink-soft);font-size:0.76rem;line-height:1.4;
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel" id="panel">
+  <p class="backlink"><a href="./">&larr; All travel plans</a></p>
+  <p class="kicker">Sunday 27 to Wednesday 30 September 2026</p>
+  <h1>Prague</h1>
+  <div class="legend">
+    <div class="lg"><span class="sw metro"></span> By metro: lines A and B</div>
+    <div class="lg"><span class="sw tram"></span> By tram: the 9, 17 and 22</div>
+    <div class="lg"><span class="sw bus"></span> The Airport Express</div>
+    <div class="lg"><span class="sw walk"></span> On foot</div>
+  </div>
+  <p class="iconnote">Two full days in the city at the end of the week across
+     Germany: Petřín, the castle by tram and the National Museum, then Letná,
+     the National Technical Museum and the Old Town. The buttons below zoom to
+     a day. Click any step to fly there.</p>
+  <h2 class="dayhead">Zoom to a day</h2>
+  <div class="days" id="days"></div>
+  <ol id="key"></ol>
+  <p class="totalhead" id="totalhead"></p>
+  <ul class="total" id="total"></ul>
+  <p class="caveat" id="caveat"></p>
+</div>
+<script>
+const LINES = __LINES__;
+const STOPS = __STOPS__;
+
+/* What each stop was for, keyed the same way as STOPS. */
+const STOP_ICON = {
+  hln:'train',          masaryk:'train',       powder:'tower',
+  lazarska:'tram',      ujezd:'tram',          petrin:'tower',
+  pohorelec:'tram',     malostranska:'tram',   palach:'landmark',
+  m_malostr:'train',    muzeum:'train',        natmuseum:'museum',
+  melantrich:'shops',   pravnicka:'tram',      jiraskovo:'tram',
+  karlovo:'train',      republiky:'train',     lokal:'food',
+  metronom:'landmark',  ntm:'museum',          agri:'museum',
+  oldsq:'landmark',     charles:'landmark',    karlovo_sq:'park',
+  churchill:'shops',    hln_ae:'train',        t2:'landmark'
+};
+/* Changes of mode and nothing more. */
+const QUIET = ['lazarska', 'pohorelec', 'malostranska', 'm_malostr', 'muzeum',
+               'pravnicka', 'jiraskovo', 'karlovo', 'republiky', 'hln_ae'];
+
+const kit = MapKit.render({lines: LINES, stops: STOPS, stopIcon: STOP_ICON,
+                           quiet: QUIET, units: 'imperial',
+                           /* Open on the city, not the run out to the airport. */
+                           fitTo: f => f.properties.mode !== 'bus'});
+const mi = km => kit.fmtDist(km);
+const km = pred => LINES.features.filter(pred)
+                        .reduce((t, f) => t + f.properties.km, 0);
+
+const days = [
+  {key:'sun', title:'Sunday 27: in from Dresden',
+   text:'The EC over the border, and a walk to the hotel.'},
+  {key:'mon', title:'Monday 28: Petřín and the National Museum',
+   text:'Tram 9 to Újezd, up Petřín and the tower, the 22 round the castle, '
+       +'line A to the National Museum, the Metronome at dusk, dinner at Lokál.'},
+  {key:'tue', title:'Tuesday 29: Letná and the Old Town',
+   text:'The Metronome, the National Technical Museum and the Museum of '
+       +'Agriculture, Old Town Square, Charles Bridge, Karlovo náměstí, and a '
+       +'grocery store crawl.'},
+  {key:'wed', title:'Wednesday 30: out',
+   text:'The Airport Express to Terminal 2, for Munich and Chicago.'},
+  {key:null, title:'All four days', text:'The whole stay.'}
+];
+const btn = (box, title, text, pred) => {
+  const el = document.createElement('div');
+  el.className = 'day';
+  el.style.setProperty('--cat', MapKit.COLOR.train);
+  el.tabIndex = 0;
+  el.setAttribute('role', 'button');
+  const show = () => kit.flyToFeatures(pred);
+  el.addEventListener('click', show);
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(); }
+  });
+  el.innerHTML = '<b>' + title + '</b><span>' + text + '</span>';
+  box.appendChild(el);
+};
+const daysBox = document.getElementById('days');
+days.forEach(d => {
+  const pred = d.key ? f => f.properties.day === d.key : () => true;
+  btn(daysBox, d.title, (d.key ? mi(km(pred)) + '. ' : '') + d.text, pred);
+});
+
+const modes = {};
+LINES.features.forEach(f => {
+  modes[f.properties.mode] = (modes[f.properties.mode] || 0) + f.properties.km;
+});
+const total = Object.values(modes).reduce((a, b) => a + b, 0);
+document.getElementById('totalhead').innerHTML =
+  '<b>' + mi(total) + ' in Prague</b>, made up of:';
+document.getElementById('total').innerHTML =
+  [['metro','by metro'], ['tram','by tram'], ['bus','by bus'],
+   ['walk','on foot']]
+    .filter(([m]) => modes[m])
+    .map(([m, label]) => '<li><span class="sw ' + m + '"></span>'
+                       + '<b>' + mi(modes[m]) + '</b> ' + label + '</li>').join('');
+
+document.getElementById('caveat').textContent =
+  'Tram, metro and bus lines come from the Prague transit operator’s own '
+  + 'timetable data, cut between the stops actually used - not from '
+  + 'OpenStreetMap, whose Airport Express still follows the bus’s old '
+  + 'route. Six walks were recorded and are drawn as recorded; the rest are '
+  + 'routed through where that day’s photographs were taken. Every walk '
+  + 'is dotted. Which tram was taken on Monday afternoon is not remembered; '
+  + 'the line drawn is one that runs that way and passes the photographs. '
+  + 'Times of day come from the photographs and the recordings.';
+</script>
+</body>
+</html>

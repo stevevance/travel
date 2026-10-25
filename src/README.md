@@ -14,6 +14,7 @@ a waypoint and re-running rather than hand-editing a 90 KB file.
 | `bruges/` | `bruges-map.html`, and the photographs on it |
 | `alphen-leiden-amsterdam/` | `alphen-leiden-amsterdam-map.html` |
 | `germany/` | `germany-map.html` |
+| `prague/` | `prague-map.html` |
 | `chicago-new-things/` | `chicago-new-things-map.html` |
 
 Each city directory holds a `template.html` with `__LINES__`/`__STOPS__`
@@ -60,6 +61,17 @@ other direction round the Ring. Several of its legs were not remembered at all;
 those are the BVG journey planner's suggestion, or the only route that fits the
 photographs, and say so in their notes.
 
+Prague is the odd one out by where its transit comes from. Every tram, metro
+and bus leg is cut from PID's own GTFS feed by `prague/gtfs_lines.py`, not from
+OSM route relations, because OSM's Airport Express relation is the bus's old
+route: it leaves the Hlavní nádraží by the Hlávkův most, 670 m from where the
+photographs put the bus on the Štefánikův most, and the feed's shape passes
+every one of those photographs within 11 m. The script tries each line that
+could have been taken and keeps the first that passes the photographs listed
+against the leg, so Monday's unremembered tram is chosen by the evidence. Its
+output, `data/prague/transit.geojson`, is committed; the 50 MB feed is not.
+Those legs carry `source: "gtfs"` and draw solid, like `osm`.
+
 ## Data sources
 
 Everything comes from public APIs, with no keys required:
@@ -73,7 +85,8 @@ Everything comes from public APIs, with no keys required:
 - **Strava GPX exports** for the legs that were measured rather than routed: the
   Utrecht bakfiets ride in `data/utrecht/`, all three Bruges rides in
   `data/bruges/`, and the three rides of 20 September in
-  `data/alphen-leiden-amsterdam/`, and the three rides of the week across Germany in `data/germany/`.
+  `data/alphen-leiden-amsterdam/`, the three rides of the week across Germany in `data/germany/`, and the six
+  Prague walks in `data/prague/`.
   Every leg carries a `source` property —
   `osm`, `routed` or `gps` — and both the Utrecht page and the Alphen day draw
   their routed reconstructions dashed so they cannot pass for a recording.
@@ -148,6 +161,11 @@ re-fetches, which takes a few minutes.
   `MapKit.render` and the scale bar and every distance in the key switch
   together; `kit.fmtDist` is there so a page's own copy uses the same units.
   Distances stay in kilometres in the data either way.
+- **A page can choose its opening frame.** Pass `fitTo`, a predicate over
+  the legs, to `MapKit.render` and the first view fits only the legs it
+  keeps. Prague passes `f => f.properties.mode !== 'bus'` so the map opens on
+  the city rather than on 17 km of Airport Express; the day buttons still fit
+  everything they name.
 - **A GPS trace through a tunnel is a guess, not a route.** Both Rotterdam rides
   cross under the station in the Provenierstunnel, and the receiver filled the
   half-minute with a zigzag across the platforms, teleporting at 136 and

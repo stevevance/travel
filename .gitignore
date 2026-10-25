@@ -10,6 +10,10 @@ src/**/tilecache/
 # is public. Keep the file alongside the notes in data/ to rebuild.
 data/**/*.gpx
 
+# The PID GTFS feed is 50 MB and re-fetched on demand; what it yields for the
+# Prague map is committed as data/prague/transit.geojson.
+data/**/*.zip
+
 # Screenshots from the shoot.py checks. Regenerable, and large.
 *_check.png
 *_check_*.png
