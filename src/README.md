@@ -16,6 +16,7 @@ a waypoint and re-running rather than hand-editing a 90 KB file.
 | `germany/` | `germany-map.html` |
 | `prague/` | `prague-map.html` |
 | `chicago-new-things/` | `chicago-new-things-map.html` |
+| `chicago-south-side-ride/` | `chicago-south-side-ride-map.html` |
 
 Each city directory holds a `template.html` with `__LINES__`/`__STOPS__`
 placeholders and a build script (`build.py`, or `build_html.py` where the
@@ -50,6 +51,20 @@ Its stop numbers come from the order of the list, not from a number typed
 beside each stop, and the count in the page's own copy is filled in by the
 build. Dropping a stop from the middle is then a one-entry diff rather than a
 renumbering of everything after it.
+
+The South Side loop of 8 November is the other Chicago ride, and the first
+page here that starts and ends at home. It was ridden but not recorded, so like
+the new-things ride every leg is `routed` and dashed; the difference is that
+its vias are the streets actually taken. Home is in neither the page nor the
+build: the line starts and ends at two public corners a few blocks short of it,
+and nothing is routed from or to the door. Its legs can be split with `BREAK`,
+which routes each side separately and draws the gap straight - for the few
+metres where OSM says a bicycle cannot go (the step from Ellis onto the 58th
+Street quad is `bicycle=no` with steps) and pedestrian costing would put the
+whole leg on the sidewalks instead, which it did on Ellis, 58th, Payne and
+Ellsworth. It draws arrows along the line, because the loop rides the Lakefront
+Trail both ways. Its eight pictures are an album in Photos, placed at their own
+fixes by `pick_photos.py` and captioned in `build.py`, the Bruges split.
 
 The week across Germany is the odd one out by size: seven days on one page,
 Rotterdam to Prague, with Berlin, Bonn, Leipzig and Dresden each given a zoom
@@ -174,6 +189,15 @@ re-fetches, which takes a few minutes.
   blacked-out fixes for the OSM way, and say in the copy that you did - a `gps`
   leg that is quietly part OSM is the kind of thing this repo should not ship
   silently.
+- **A pin inside an underpass snaps to the road overhead.** The 11th Street
+  underpass on the Chicago lakefront runs under Columbus Drive, and a via in
+  the middle of it put the route on Columbus, up to Balbo and back. Pin the path
+  just outside each portal instead.
+- **The public Valhalla ignores `ignore_oneways`, and pedestrian costing is
+  not the way round it.** It keeps to footways and sidewalks wherever a city maps
+  them separately, which Chicago does, so a leg routed that way leaves every
+  street it was meant to follow. Split the leg with `BREAK` around the one
+  forbidden step instead, and keep bicycle costing either side.
 - **A sick Overpass mirror accepts the connection and then says nothing.**
   `kumi.systems` hung for minutes at a stretch while `overpass-api.de` answered
   the same query in two seconds, and a 300 s read timeout turned that into a

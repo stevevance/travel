@@ -1,0 +1,125 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/chicago-south-side-ride/img_3960.jpg",
+    "file": "IMG_3960.HEIC",
+    "time": "12:48"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -87.617845,
+     41.868003
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/chicago-south-side-ride/img_3961.jpg",
+    "file": "IMG_3961.HEIC",
+    "time": "13:37"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -87.57522,
+     41.782517
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/chicago-south-side-ride/img_3966.jpg",
+    "file": "IMG_3966.HEIC",
+    "time": "13:53"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -87.584433,
+     41.783295
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/chicago-south-side-ride/img_3967.jpg",
+    "file": "IMG_3967.HEIC",
+    "time": "13:53"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -87.58445,
+     41.783358
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/chicago-south-side-ride/img_3969.jpg",
+    "file": "IMG_3969.HEIC",
+    "time": "14:12"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -87.585822,
+     41.785795
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/chicago-south-side-ride/img_3973.jpg",
+    "file": "IMG_3973.HEIC",
+    "time": "15:41"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -87.600638,
+     41.791425
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/chicago-south-side-ride/img_3975.jpg",
+    "file": "IMG_3975.HEIC",
+    "time": "15:53"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -87.609825,
+     41.8022
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "img": "photos/chicago-south-side-ride/img_3978.jpg",
+    "file": "IMG_3978.HEIC",
+    "time": "16:09"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -87.604662,
+     41.823355
+    ]
+   }
+  }
+ ]
+}

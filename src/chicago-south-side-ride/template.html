@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
+<title>Chicago, a South Side loop</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="map-common.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="map-common.js"></script>
+<style>
+  /* Only what this page adds to map-common.css. */
+  /* Ridden but not recorded, so the swatch is dashed like the line. */
+  .sw.planned{border-top-style:dashed;}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel" id="panel">
+  <p class="backlink"><a href="./">&larr; All travel plans</a></p>
+  <p class="kicker">8 November 2026 &middot; a day at home</p>
+  <h1>Chicago, a South Side loop</h1>
+  <div class="legend">
+    <div class="lg"><span class="sw bike planned"></span> The ride, by bike</div>
+  </div>
+  <p class="iconnote">Down the lakefront to Jackson Park, lunch at Medici on
+     57th, and back through Washington Park and Kenwood to the lakefront,
+     about __MILES__ miles. The ride was not recorded: the line is Valhalla's
+     bicycle route pinned to the streets and park drives that were taken,
+     drawn dashed because it is a reconstruction rather than a recording,
+     with arrows for the way it went. It starts and ends a few blocks short of
+     home. The camera dots are the day's pictures. Click any step to fly
+     there.</p>
+  <ol id="key"></ol>
+</div>
+<script>
+const LINES = __LINES__;
+const STOPS = __STOPS__;
+const STOP_ICON = __ICONS__;
+const PHOTOS = __PHOTOS__;
+
+const kit = MapKit.render({lines: LINES, stops: STOPS, stopIcon: STOP_ICON,
+                           photos: PHOTOS, units: 'imperial'});
+
+/* Arrows along the line, pointing the way the ride went. The loop rides the
+   Lakefront Trail both ways between the Museum Campus and 41st Street, and
+   without them the two directions read as one line. The arrow is drawn on a
+   canvas rather than taken from a font, because the basemap's glyphs are not
+   guaranteed to carry one. Registered after render, so this load handler runs
+   after map-common's and the legs source already exists. */
+kit.map.on('load', function () {
+  const n = 40, c = document.createElement('canvas');
+  c.width = c.height = n;
+  const g = c.getContext('2d');
+  g.lineJoin = g.lineCap = 'round';
+  g.beginPath(); g.moveTo(13, 9); g.lineTo(27, 20); g.lineTo(13, 31);
+  g.strokeStyle = '#fff'; g.lineWidth = 9; g.stroke();
+  g.strokeStyle = '#7d4bc2'; g.lineWidth = 4.5; g.stroke();
+  kit.map.addImage('ride-arrow', g.getImageData(0, 0, n, n), {pixelRatio: 2});
+  kit.map.addLayer({
+    id: 'legs-arrows', type: 'symbol', source: 'legs',
+    layout: {'symbol-placement': 'line', 'symbol-spacing': 140,
+             'icon-image': 'ride-arrow', 'icon-rotation-alignment': 'map',
+             'icon-allow-overlap': true, 'icon-ignore-placement': true}
+  });
+});
+</script>
+</body>
+</html>
