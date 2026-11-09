@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
+<title>South Side loop in 3D</title>
+<link rel="stylesheet" href="map-common.css">
+<style>
+  /* Only what this page adds to map-common.css. The model is drawn like a
+     line-art vector map: ink outlines, hatched water, one bright line. The
+     colours come from the theme switch; these are Paper's, set again by JS. */
+  :root{--bg:#ebe8e2;--panel:#fffdf8;--accent:#d2302c;}
+  body{background:var(--bg);overflow:hidden;}
+  #map canvas{display:block;}
+  .panel{background:var(--panel);color:var(--ink);}
+  .panel a,.kicker{color:var(--ink-soft);}
+  .panel .sw.ride{border-top:3px solid var(--accent);}
+  #key{--cat:var(--accent);}
+  ol li::before{background:var(--panel);color:var(--ink);}
+  .controls{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;}
+  .controls button{
+    font:inherit;font-size:0.8rem;padding:4px 10px;cursor:pointer;
+    border:1px solid var(--ink-soft);background:var(--panel);color:var(--ink);border-radius:3px;
+  }
+  .controls button[aria-pressed="true"]{background:var(--ink);color:var(--panel);}
+  .controls.themes{margin-top:-4px;}
+  #zoombox{position:fixed;z-index:5;pointer-events:none;border:1.5px solid var(--accent);
+    background:color-mix(in srgb, var(--accent) 10%, transparent);}
+  .controls.themes span{font-size:0.8rem;color:var(--ink-soft);align-self:center;margin-right:2px;}
+  #key li{cursor:pointer;}
+  .pin{
+    font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+    font-size:11px;font-weight:700;color:var(--panel);background:var(--accent);
+    border:1.5px solid var(--panel);border-radius:11px;min-width:22px;height:22px;
+    padding:0 5px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 3px rgba(0,0,0,.35);cursor:pointer;pointer-events:auto;
+  }
+  .pin span{
+    display:none;position:absolute;left:26px;white-space:nowrap;
+    font-family:'Iowan Old Style',Palatino,Georgia,serif;font-weight:400;
+    font-size:13px;color:var(--ink);background:var(--panel);padding:2px 7px;
+    border:1px solid var(--line);border-radius:3px;
+  }
+  .pin:hover span{display:block;}
+  .credit{
+    position:absolute;right:10px;bottom:8px;font-size:11px;color:var(--ink-soft);
+  }
+  .credit a{color:inherit;}
+  @media (max-width:640px){
+    .panel{max-height:38vh;}
+  }
+</style>
+<script type="importmap">
+{"imports":{
+  "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel" id="panel">
+  <p class="backlink"><a href="chicago-south-side-ride-map.html">&larr; The ride on a map</a></p>
+  <p class="kicker">8 November 2026</p>
+  <h1>Chicago, a South Side loop, in 3D</h1>
+  <div class="legend">
+    <div class="lg"><span class="sw ride"></span> The ride, by bike</div>
+  </div>
+  <p class="iconnote">The same <span id="miles"></span>-mile loop, with every
+     building within a quarter mile of it raised from OpenStreetMap and the
+     rest of the city cut away; the tinted buildings stand by the stops.
+     Drag to move, right-drag or two fingers to turn and tilt, scroll or
+     shift-drag a box to zoom, click a stop to fly there.</p>
+  <div class="controls">
+    <button id="play">Play the ride</button>
+    <button id="stop" hidden>Stop</button>
+    <button id="spin" aria-pressed="false">Turn</button>
+    <button id="reset">Whole loop</button>
+    <button id="save">Save image</button>
+  </div>
+  <div class="controls themes" id="themes">
+    <span>Colors</span>
+    <button data-theme="paper">Paper</button>
+    <button data-theme="blueprint">Blueprint</button>
+    <button data-theme="night">Night</button>
+  </div>
+  <ol id="key"></ol>
+</div>
+<div class="credit">Buildings, parks and water &copy;
+  <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors</div>
+
+<script>window.MODEL = __MODEL__;</script>
+<script type="module">
+import * as THREE from 'three';
+import { MapControls } from 'three/addons/controls/MapControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
+
+const M = window.MODEL;
+const VZ = 1.4;          // vertical exaggeration, so the bungalows read
+const SLAB = 90;         // how deep the cut-out island is, in metres
+
+document.getElementById('miles').textContent = Math.round(M.miles);
+
+/* ------------------------------------------------------------ themes --- */
+// Pairs are [fill, hatch line]. Roads run paths, streets, arterials, the Drive.
+const THEMES = {
+  paper: {bg: 0xebe8e2, slab: 0xfaf8f3, side: [0xdcd7cd, 0x9c958a],
+          green: [0xe9eedc, 0xa9b98e], water: [0xc5d9e2, 0x6f97ab], skirt: [0xb3cbd6, 0x5d8599],
+          roads: [0xb7b1a6, 0x8f897f, 0x6b665e, 0x4a4743], rail: 0x5d4b6b,
+          roof: 0xfffdf8, wall: 0xfffdf8, rule: 0x9d9b97, hot: 0xf4c9c4,
+          ink: 0x24262a, inkA: 0.85, route: 0xd2302c, casing: 0xffffff,
+          css: {panel: '#fffdf8', ink: '#14201c', soft: '#5a5346', line: '#c9c1ae'}},
+  blueprint: {bg: 0x1f3a5f, slab: 0x24446d, side: [0x1a3352, 0x4d6d94],
+          green: [0x24446d, 0x4f74a3], water: [0x183050, 0x7f9fc6], skirt: [0x152a46, 0x6d8db5],
+          roads: [0x3f5f88, 0x5b7ca6, 0x7d9cc4, 0xa9c2e0], rail: 0x9fb7d6,
+          roof: 0x4a75aa, wall: 0x4a75aa, rule: 0x86a8d4, hot: 0xffd2a8,
+          ink: 0xeaf2ff, inkA: 0.75, route: 0xff8a3d, casing: 0x1f3a5f,
+          css: {panel: '#18304f', ink: '#eaf2ff', soft: '#a9c2e0', line: '#3f5f88'}},
+  night: {bg: 0x14161a, slab: 0x1b1e23, side: [0x111317, 0x2c4a36],
+          green: [0x1d2a20, 0x3f6b47], water: [0x0f1114, 0x2f5c3d], skirt: [0x0c0e10, 0x2a5236],
+          roads: [0x25302a, 0x2f4a37, 0x3e6b4b, 0x58a06d], rail: 0x5fd38a,
+          roof: 0x22262c, wall: 0x1f2328, rule: 0x2f5a3c, hot: 0x3a6b4a,
+          ink: 0x5fd38a, inkA: 0.8, route: 0xffcf5a, casing: 0x14161a,
+          css: {panel: '#1b1e23', ink: '#d8f5e1', soft: '#8fbf9d', line: '#2f4a37'}}
+};
+// Everything a theme recolours registers here as it is made.
+const themed = [];
+// Hatch spacing and route widths are in screen pixels; the export scales them.
+const hatches = [];
+
+/* ------------------------------------------------------------ scene --- */
+const host = document.getElementById('map');
+const renderer = new THREE.WebGLRenderer({antialias: true, logarithmicDepthBuffer: true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+host.appendChild(renderer.domElement);
+const labels = new CSS2DRenderer();
+labels.setSize(innerWidth, innerHeight);
+labels.domElement.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
+host.appendChild(labels.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(22, innerWidth / innerHeight, 20, 200000);
+camera.up.set(0, 0, 1);
+// Map-style: left-drag pans along the ground, right-drag or two fingers turn.
+const controls = new MapControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.screenSpacePanning = false;
+controls.maxPolarAngle = Math.PI * 0.47;
+controls.minDistance = 300;
+controls.maxDistance = 60000;
+controls.autoRotateSpeed = 0.6;
+
+const DPR = renderer.getPixelRatio();
+
+/* Flat ground fills, hatched in screen space like an engraving: the lines keep
+   their spacing however far the camera is. */
+function hatchMaterial(key, spacing, angle, weight, order) {
+  const m = new THREE.ShaderMaterial({
+    uniforms: {uBase: {value: new THREE.Color()}, uLine: {value: new THREE.Color()},
+               uS: {value: spacing * DPR}, uA: {value: angle}, uW: {value: weight * DPR}},
+    vertexShader: `
+      #include <common>
+      #include <logdepthbuf_pars_vertex>
+      void main(){ gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+                   #include <logdepthbuf_vertex>
+      }`,
+    fragmentShader: `
+      #include <logdepthbuf_pars_fragment>
+      uniform vec3 uBase; uniform vec3 uLine; uniform float uS, uA, uW;
+      void main(){
+        #include <logdepthbuf_fragment>
+        vec2 p = gl_FragCoord.xy;
+        float u = p.y * cos(uA) + p.x * sin(uA);
+        float d = abs(fract(u / uS) - 0.5) * uS;
+        float l = 1.0 - smoothstep(uW * 0.5, uW * 0.5 + 1.0, d);
+        gl_FragColor = vec4(mix(uBase, uLine, l), 1.0);
+      }`,
+    depthWrite: false
+  });
+  m.userData.order = order;
+  m.userData.spacing = spacing; m.userData.weight = weight;
+  hatches.push(m);
+  themed.push(T => { m.uniforms.uBase.value.set(T[key][0]); m.uniforms.uLine.value.set(T[key][1]); });
+  return m;
+}
+
+/* Walls get vertical rules a few metres apart and a little shade by facing.
+   Buildings by a stop carry hot = 1 and take the theme's tint. */
+const buildingMat = new THREE.ShaderMaterial({
+  uniforms: {uRoof: {value: new THREE.Color()}, uWall: {value: new THREE.Color()},
+             uHot: {value: new THREE.Color()}, uRule: {value: new THREE.Color()}},
+  vertexShader: `
+    #include <common>
+    #include <logdepthbuf_pars_vertex>
+    attribute float hot;
+    varying vec3 vN; varying vec3 vP; varying float vH;
+    void main(){ vN = normal; vP = position; vH = hot;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+      #include <logdepthbuf_vertex>
+    }`,
+  fragmentShader: `
+    #include <logdepthbuf_pars_fragment>
+    varying vec3 vN; varying vec3 vP; varying float vH;
+    uniform vec3 uRoof, uWall, uHot, uRule;
+    void main(){
+      #include <logdepthbuf_fragment>
+      vec3 n = normalize(vN);
+      if (n.z > 0.5) { gl_FragColor = vec4(mix(uRoof, uHot, vH), 1.0); return; }
+      float shade = 0.80 + 0.18 * max(dot(n, normalize(vec3(0.55, -0.75, 0.0))), 0.0);
+      float u = dot(vP.xy, vec2(-n.y, n.x));
+      float s = 3.2;
+      float w = fwidth(u);
+      float d = abs(fract(u / s) - 0.5) * s;
+      float l = (1.0 - smoothstep(0.0, w * 1.5, d - 0.15)) * clamp(1.6 - w / s * 3.0, 0.0, 1.0);
+      vec3 c = mix(uWall, uHot, vH) * shade;
+      gl_FragColor = vec4(mix(c, mix(uRule, c * 0.62, vH), l * 0.7), 1.0);
+    }`,
+  polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1
+});
+
+themed.push(T => { const u = buildingMat.uniforms;
+  u.uRoof.value.set(T.roof); u.uWall.value.set(T.wall); u.uHot.value.set(T.hot); u.uRule.value.set(T.rule); });
+
+const inkMat = new THREE.LineBasicMaterial({transparent: true});
+themed.push(T => { inkMat.color.set(T.ink); inkMat.opacity = T.inkA; });
+
+/* ------------------------------------------------------- triangulate --- */
+function toV2(r) { return r.map(p => new THREE.Vector2(p[0], p[1])); }
+
+function flatMesh(polys, z, mat, order) {
+  const pos = [];
+  for (const rings of polys) {
+    const outer = toV2(rings[0]), holes = rings.slice(1).map(toV2);
+    const all = outer.concat(...holes);
+    for (const t of THREE.ShapeUtils.triangulateShape(outer, holes))
+      for (const i of t) pos.push(all[i].x, all[i].y, z);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const m = new THREE.Mesh(g, mat);
+  m.renderOrder = order;
+  scene.add(m);
+  return m;
+}
+
+/* The island: a paper slab with hatched sides and an inked rim. */
+const isl = M.island;
+{
+  const topMat = new THREE.MeshBasicMaterial();
+  themed.push(T => topMat.color.set(T.slab));
+  flatMesh([isl], 0, topMat, 0);
+  const pos = [], edge = [];
+  for (const r of isl) {
+    for (let i = 0; i < r.length; i++) {
+      const a = r[i], b = r[(i + 1) % r.length];
+      pos.push(a[0], a[1], 0, b[0], b[1], 0, b[0], b[1], -SLAB,
+               a[0], a[1], 0, b[0], b[1], -SLAB, a[0], a[1], -SLAB);
+      edge.push(a[0], a[1], 0, b[0], b[1], 0, a[0], a[1], -SLAB, b[0], b[1], -SLAB);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const sm = hatchMaterial('side', 3, 0, 1, 0);
+  sm.depthWrite = true; sm.side = THREE.DoubleSide;
+  scene.add(new THREE.Mesh(g, sm));
+  const eg = new THREE.BufferGeometry();
+  eg.setAttribute('position', new THREE.Float32BufferAttribute(edge, 3));
+  scene.add(new THREE.LineSegments(eg, inkMat));
+}
+
+flatMesh(M.green, 0.4, hatchMaterial('green', 7, 0.785, 1, 1), 1);
+flatMesh(M.water, 0.8, hatchMaterial('water', 3.5, 0, 1.1, 2), 2);
+
+/* Where the lake's edge meets the slab's side, hatch the side blue too, so the
+   water reads as cut like in a cross-section. Cheap: a second, shallower skirt
+   drawn only under water polygons' outer rings. */
+{
+  const pos = [];
+  for (const rings of M.water) {
+    const r = rings[0];
+    for (let i = 0; i < r.length; i++) {
+      const a = r[i], b = r[(i + 1) % r.length];
+      pos.push(a[0], a[1], 0.8, b[0], b[1], 0.8, b[0], b[1], -SLAB * 0.6,
+               a[0], a[1], 0.8, b[0], b[1], -SLAB * 0.6, a[0], a[1], -SLAB * 0.6);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const m = hatchMaterial('skirt', 3.5, 0, 1.1, 2);
+  m.depthWrite = true; m.side = THREE.DoubleSide;
+  m.polygonOffset = true; m.polygonOffsetFactor = -2; m.polygonOffsetUnits = -2;
+  scene.add(new THREE.Mesh(g, m));
+}
+
+/* Streets as fine ink on the paper; paths fainter, the Drive heavier. */
+{
+  const groups = [[], [], [], []];
+  for (const [k, pts] of M.roads)
+    for (let i = 0; i < pts.length - 1; i++)
+      groups[k].push(pts[i][0], pts[i][1], 1.2, pts[i + 1][0], pts[i + 1][1], 1.2);
+  const rail = [];
+  for (const pts of M.rails)
+    for (let i = 0; i < pts.length - 1; i++)
+      rail.push(pts[i][0], pts[i][1], 1.2, pts[i + 1][0], pts[i + 1][1], 1.2);
+  groups.push(rail);
+  groups.forEach((arr, k) => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+    const mat = new THREE.LineBasicMaterial({depthWrite: false});
+    themed.push(T => mat.color.set(k < 4 ? T.roads[k] : T.rail));
+    const l = new THREE.LineSegments(g, mat);
+    l.renderOrder = 3;
+    scene.add(l);
+  });
+}
+
+/* ---------------------------------------------------------- buildings --- */
+const hot = M.stops.filter((s, i) => i > 0 && i < M.stops.length - 1);
+function nearStop(r) {
+  let cx = 0, cy = 0;
+  for (const p of r) { cx += p[0]; cy += p[1]; }
+  cx /= r.length; cy /= r.length;
+  return hot.some(s => Math.hypot(s.xy[0] - cx, s.xy[1] - cy) < 50);
+}
+{
+  const pos = [], nor = [], hot = [], edge = [];
+  for (const [h0, mh0, rings] of M.buildings) {
+    const h = h0 * VZ, mh = mh0 * VZ;
+    const c = nearStop(rings[0]) ? 1 : 0;
+    const outer = toV2(rings[0]), holes = rings.slice(1).map(toV2);
+    const all = outer.concat(...holes);
+    for (const t of THREE.ShapeUtils.triangulateShape(outer, holes))
+      for (const i of t) { pos.push(all[i].x, all[i].y, h); nor.push(0, 0, 1); hot.push(c); }
+    for (const r of rings) {
+      const n = r.length;
+      for (let i = 0; i < n; i++) {
+        const a = r[i], b = r[(i + 1) % n], z = r[(i + n - 1) % n];
+        let nx = b[1] - a[1], ny = a[0] - b[0];
+        const len = Math.hypot(nx, ny) || 1; nx /= len; ny /= len;
+        pos.push(a[0], a[1], mh, b[0], b[1], mh, b[0], b[1], h,
+                 a[0], a[1], mh, b[0], b[1], h, a[0], a[1], h);
+        for (let k = 0; k < 6; k++) { nor.push(nx, ny, 0); hot.push(c); }
+        edge.push(a[0], a[1], h, b[0], b[1], h, a[0], a[1], mh, b[0], b[1], mh);
+        // A vertical rule only where the wall actually turns a corner.
+        const t1 = Math.atan2(a[1] - z[1], a[0] - z[0]), t2 = Math.atan2(b[1] - a[1], b[0] - a[0]);
+        let dt = Math.abs(t2 - t1); if (dt > Math.PI) dt = 2 * Math.PI - dt;
+        if (dt > 0.35) edge.push(a[0], a[1], mh, a[0], a[1], h);
+      }
+    }
+  }
+  /* Lofts: walls that lean, from a lower outline to an upper one with the
+     same corners (only the Obama tower). Each is capped with a roof. */
+  for (const [z0_, z1_, lo, up] of M.lofts) {
+    const z0 = z0_ * VZ, z1 = z1_ * VZ, n = lo.length;
+    const c = nearStop(lo) ? 1 : 0;
+    const top = toV2(up);
+    for (const t of THREE.ShapeUtils.triangulateShape(top, []))
+      for (const i of t) { pos.push(top[i].x, top[i].y, z1); nor.push(0, 0, 1); hot.push(c); }
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n, k = (i + n - 1) % n;
+      const a = lo[i], b = lo[j], A = up[i], B = up[j];
+      // Normal of the leaning quad, from its two diagonals.
+      const d1 = [B[0] - a[0], B[1] - a[1], z1 - z0], d2 = [A[0] - b[0], A[1] - b[1], z1 - z0];
+      const v = new THREE.Vector3(d2[1] * d1[2] - d2[2] * d1[1], d2[2] * d1[0] - d2[0] * d1[2],
+                                  d2[0] * d1[1] - d2[1] * d1[0]).normalize().negate();
+      pos.push(a[0], a[1], z0, b[0], b[1], z0, B[0], B[1], z1,
+               a[0], a[1], z0, B[0], B[1], z1, A[0], A[1], z1);
+      for (let q = 0; q < 6; q++) { nor.push(v.x, v.y, v.z); hot.push(c); }
+      edge.push(a[0], a[1], z0, b[0], b[1], z0, A[0], A[1], z1, B[0], B[1], z1);
+      const z = lo[k];
+      const t1 = Math.atan2(a[1] - z[1], a[0] - z[0]), t2 = Math.atan2(b[1] - a[1], b[0] - a[0]);
+      let dt = Math.abs(t2 - t1); if (dt > Math.PI) dt = 2 * Math.PI - dt;
+      if (dt > 0.35) edge.push(a[0], a[1], z0, A[0], A[1], z1);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setAttribute('hot', new THREE.Float32BufferAttribute(hot, 1));
+  const mesh = new THREE.Mesh(g, buildingMat);
+  mesh.renderOrder = 4;
+  scene.add(mesh);
+  const eg = new THREE.BufferGeometry();
+  eg.setAttribute('position', new THREE.Float32BufferAttribute(edge, 3));
+  const lines = new THREE.LineSegments(eg, inkMat);
+  lines.renderOrder = 4;
+  scene.add(lines);
+}
+
+/* -------------------------------------------------------------- route --- */
+const path = [];
+for (const leg of M.route) for (const p of leg) {
+  const last = path[path.length - 1];
+  if (!last || last[0] !== p[0] || last[1] !== p[1]) path.push(p);
+}
+/* Round the corners off, twice (Chaikin), cutting at most 8 m into each one:
+   the routed line turns on a sixpence at every node, and the dot playing it
+   back jerked at each. The line and the dot share the rounded path. */
+for (let pass = 0; pass < 2; pass++) {
+  const out = [path[0]];
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i], b = path[i + 1];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const f = Math.min(0.25, 8 / (len || 1));
+    out.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f],
+             [b[0] - (b[0] - a[0]) * f, b[1] - (b[1] - a[1]) * f]);
+  }
+  out.push(path[path.length - 1]);
+  path.length = 0; path.push(...out);
+}
+const flat = [];
+for (const p of path) flat.push(p[0], p[1], 2);
+// Cumulative length, for playing the ride at an even speed.
+const cum = [0];
+for (let i = 1; i < path.length; i++)
+  cum.push(cum[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]));
+const TOTAL = cum[cum.length - 1];
+
+/* The route goes behind buildings, like the streets. A faint copy drawn
+   through everything keeps it traceable where a tower hides it. */
+const routeLines = [];
+function routeLine(key, width, order, ghost) {
+  const g = new LineGeometry();
+  g.setPositions(flat);
+  const m = new LineMaterial({linewidth: width, worldUnits: false, transparent: true,
+                              depthTest: !ghost, depthWrite: false, opacity: ghost ? 0.35 : 1});
+  m.userData.width = width;
+  themed.push(T => m.color.set(T[key]));
+  m.resolution.set(innerWidth, innerHeight);
+  const l = new Line2(g, m);
+  l.computeLineDistances();
+  l.renderOrder = order;
+  scene.add(l);
+  routeLines.push(l);
+  return l;
+}
+routeLine('route', 3.5, 7, true);
+routeLine('casing', 7, 5);
+routeLine('route', 3.5, 6);
+const SEGS = path.length - 1;
+
+const rider = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14),
+                             new THREE.MeshBasicMaterial());
+themed.push(T => rider.material.color.set(T.route));
+rider.visible = false;
+scene.add(rider);
+
+/* -------------------------------------------------------------- stops --- */
+// Start and finish are a block apart; they share one pin.
+const pins = [];
+for (const s of M.stops) {
+  const near = pins.find(p => Math.hypot(p.xy[0] - s.xy[0], p.xy[1] - s.xy[1]) < 150);
+  if (near) { near.ns.push(s.n); near.names.push(s.name); continue; }
+  pins.push({xy: s.xy, ns: [s.n], names: [s.name]});
+}
+for (const p of pins) {
+  const el = document.createElement('div');
+  el.className = 'pin';
+  el.innerHTML = p.ns.join(' · ') + '<span></span>';
+  el.querySelector('span').textContent = p.names[0];
+  el.addEventListener('click', () => flyTo(p.xy, 2600));
+  const o = new CSS2DObject(el);
+  o.position.set(p.xy[0], p.xy[1], 60);
+  scene.add(o);
+}
+const key = document.getElementById('key');
+for (const s of M.stops) {
+  const li = document.createElement('li');
+  li.dataset.n = s.n;
+  li.textContent = s.name;
+  li.addEventListener('click', () => flyTo(s.xy, 2600));
+  key.appendChild(li);
+}
+
+/* ------------------------------------------------------------- camera --- */
+const ib = new THREE.Box2();
+for (const p of isl[0]) ib.expandByPoint(new THREE.Vector2(p[0], p[1]));
+const centre = new THREE.Vector3((ib.min.x + ib.max.x) / 2, (ib.min.y + ib.max.y) / 2, 0);
+const span = Math.max(ib.max.x - ib.min.x, ib.max.y - ib.min.y);
+
+/* The panel covers the left of the screen (the bottom, on a phone), so the
+   picture is centred in what is left over rather than in the window. */
+const panel = document.getElementById('panel');
+function frame() {
+  const r = panel.getBoundingClientRect();
+  const phone = r.width > innerWidth * 0.8;
+  const dx = phone ? 0 : -(r.right) / 2, dy = phone ? (innerHeight - r.top) / 2 : 0;
+  camera.setViewOffset(innerWidth, innerHeight, dx, dy, innerWidth, innerHeight);
+}
+
+// From over the lake, looking west, so the loop runs across the screen with
+// the hatched water in front, the way the video looks across water.
+function homeView(instant) {
+  const portrait = innerHeight > innerWidth;
+  const d = span * (portrait ? 4.2 : 2.0);
+  const dir = portrait ? new THREE.Vector3(0.45, -0.55, 0.75).normalize()
+                       : new THREE.Vector3(0.8, -0.28, 0.62).normalize();
+  tweenTo(centre.clone(), centre.clone().add(dir.multiplyScalar(d)), instant ? 0 : 1600);
+}
+
+let tween = null;
+function tweenTo(target, pos, ms) {
+  if (!ms) { controls.target.copy(target); camera.position.copy(pos); controls.update(); return; }
+  tween = {t0: performance.now(), ms, ft: controls.target.clone(), fp: camera.position.clone(), target, pos};
+}
+function flyTo(xy, dist) {
+  stopPlay();
+  const target = new THREE.Vector3(xy[0], xy[1], 0);
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  if (dir.z < 0.45) { dir.z = 0.45; dir.normalize(); }
+  tweenTo(target, target.clone().add(dir.multiplyScalar(dist)), 1400);
+}
+/* Shift-drag a box to zoom into it, as on web maps. Caught before
+   MapControls sees the pointer, so the drag doesn't also pan. */
+{
+  let box = null;
+  const ground = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), ray = new THREE.Raycaster();
+  host.addEventListener('pointerdown', e => {
+    if (!e.shiftKey || e.button !== 0) return;
+    e.stopImmediatePropagation(); e.preventDefault();
+    const el = document.createElement('div');
+    el.id = 'zoombox'; el.hidden = true;
+    document.body.appendChild(el);
+    box = {x: e.clientX, y: e.clientY, el};
+  }, true);
+  addEventListener('pointermove', e => {
+    if (!box) return;
+    const st = box.el.style;
+    st.left = Math.min(box.x, e.clientX) + 'px'; st.top = Math.min(box.y, e.clientY) + 'px';
+    st.width = Math.abs(e.clientX - box.x) + 'px'; st.height = Math.abs(e.clientY - box.y) + 'px';
+    box.el.hidden = false;
+  });
+  addEventListener('pointerup', e => {
+    if (!box) return;
+    const b = box; box = null; b.el.remove();
+    const w = Math.abs(e.clientX - b.x), h = Math.abs(e.clientY - b.y);
+    if (w < 8 && h < 8) return;
+    const ndc = new THREE.Vector2(((b.x + e.clientX) / 2) / innerWidth * 2 - 1,
+                                  1 - ((b.y + e.clientY) / 2) / innerHeight * 2);
+    ray.setFromCamera(ndc, camera);
+    const target = new THREE.Vector3();
+    if (!ray.ray.intersectPlane(ground, target)) return;
+    const off = camera.position.clone().sub(controls.target);
+    const d = Math.max(controls.minDistance, off.length() * Math.max(w / innerWidth, h / innerHeight));
+    tweenTo(target, target.clone().add(off.normalize().multiplyScalar(d)), 900);
+  });
+}
+const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+/* --------------------------------------------------------------- play --- */
+let play = null;
+const playBtn = document.getElementById('play');
+function at(dist) {
+  let lo = 0, hi = cum.length - 1;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (cum[mid] < dist) lo = mid; else hi = mid; }
+  const f = (dist - cum[lo]) / ((cum[hi] - cum[lo]) || 1);
+  return {i: lo, x: path[lo][0] + (path[hi][0] - path[lo][0]) * f,
+          y: path[lo][1] + (path[hi][1] - path[lo][1]) * f};
+}
+const stopBtn = document.getElementById('stop');
+function stopPlay() {
+  if (!play) return;
+  play = null; rider.visible = false;
+  for (const l of routeLines) l.geometry.instanceCount = SEGS;
+  playBtn.textContent = 'Play the ride';
+  stopBtn.hidden = true;
+}
+stopBtn.addEventListener('click', stopPlay);
+playBtn.addEventListener('click', () => {
+  // While playing, the same button pauses and resumes; Stop ends it.
+  if (play) {
+    play.paused = !play.paused;
+    playBtn.textContent = play.paused ? 'Resume' : 'Pause';
+    return;
+  }
+  spin(false);
+  tween = null;
+  play = {elapsed: 0, last: performance.now(), paused: false, ms: 40000};
+  rider.visible = true;
+  playBtn.textContent = 'Pause';
+  stopBtn.hidden = false;
+  const p = at(0);
+  const target = new THREE.Vector3(p.x, p.y, 0);
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  if (dir.z < 0.5) { dir.z = 0.5; dir.normalize(); }
+  tweenTo(target, target.clone().add(dir.multiplyScalar(3800)), 1200);
+});
+
+function spin(on) {
+  controls.autoRotate = on;
+  document.getElementById('spin').setAttribute('aria-pressed', on);
+}
+document.getElementById('spin').addEventListener('click', () => spin(!controls.autoRotate));
+document.getElementById('reset').addEventListener('click', () => { stopPlay(); homeView(false); });
+controls.addEventListener('start', () => { tween = null; });
+
+/* ------------------------------------------------------------- render --- */
+/* The switch. The choice is remembered in this browser, and ?theme= wins. */
+const hex = n => '#' + n.toString(16).padStart(6, '0');
+let theme = 'paper';
+function setTheme(name) {
+  theme = THEMES[name] ? name : 'paper';
+  const T = THEMES[theme];
+  themed.forEach(f => f(T));
+  renderer.setClearColor(T.bg);
+  const r = document.documentElement.style;
+  r.setProperty('--bg', hex(T.bg)); r.setProperty('--panel', T.css.panel);
+  r.setProperty('--ink', T.css.ink); r.setProperty('--ink-soft', T.css.soft);
+  r.setProperty('--line', T.css.line); r.setProperty('--accent', hex(T.route));
+  document.querySelectorAll('#themes button').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.theme === theme));
+  try { localStorage.setItem('ssl3d-theme', theme); } catch (e) {}
+}
+document.querySelectorAll('#themes button').forEach(b =>
+  b.addEventListener('click', () => setTheme(b.dataset.theme)));
+let first = new URLSearchParams(location.search).get('theme');
+if (!THEMES[first]) { try { first = localStorage.getItem('ssl3d-theme'); } catch (e) {} }
+setTheme(first);
+
+/* -------------------------------------------------------------- export --- */
+/* A square PNG of what is on screen, 3000 px a side. The canvas is resized and
+   drawn once at that size; the field of view widens so a wide window's sides
+   are kept rather than cropped. Hatching and the route scale with it, and the
+   pins and a caption are painted on afterwards, since the on-screen pins are
+   HTML and not part of the canvas. */
+const EXPORT = 3000;
+function hatchScale(k) {
+  for (const m of hatches) { m.uniforms.uS.value = m.userData.spacing * k; m.uniforms.uW.value = m.userData.weight * k; }
+}
+function saveImage() {
+  // Screen pixels to export pixels: the window's longer side becomes 3000.
+  const k = EXPORT / Math.max(innerWidth, innerHeight);
+  const was = {fov: camera.fov, aspect: camera.aspect, ratio: renderer.getPixelRatio()};
+  const aspect = innerWidth / innerHeight;
+  if (aspect > 1)
+    camera.fov = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * aspect) * 180 / Math.PI;
+  camera.aspect = 1;
+  camera.clearViewOffset();
+  camera.updateProjectionMatrix();
+  // Crop to the model: when all of it is in view, the square closes in on the
+  // island instead of leaving it small in an empty frame. Room is left at the
+  // bottom for the caption and at the top for the towers.
+  const v0 = new THREE.Vector3();
+  let x0 = 1, x1 = -1, y0 = 1, y1 = -1;
+  for (const p of isl[0]) {
+    v0.set(p[0], p[1], 0).project(camera);
+    x0 = Math.min(x0, v0.x); x1 = Math.max(x1, v0.x); y0 = Math.min(y0, v0.y); y1 = Math.max(y1, v0.y);
+  }
+  x0 = Math.max(x0, -1); x1 = Math.min(x1, 1); y0 = Math.max(y0, -1); y1 = Math.min(y1, 1);
+  const side = Math.min(2, Math.max(x1 - x0, y1 - y0) * 1.12 + 0.12);
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2 - 0.04 * side;
+  const win = side / 2 * EXPORT;
+  const wx = (cx + 1) / 2 * EXPORT - win / 2, wy = (1 - cy) / 2 * EXPORT - win / 2;
+  camera.setViewOffset(EXPORT, EXPORT, wx, wy, win, win);
+  const zk = EXPORT / win;
+  renderer.setPixelRatio(1);
+  renderer.setSize(EXPORT, EXPORT, false);
+  hatchScale(k * zk);
+  for (const l of routeLines) {
+    l.material.resolution.set(EXPORT, EXPORT);
+    l.material.linewidth = l.material.userData.width * k * Math.sqrt(zk);
+  }
+  renderer.render(scene, camera);
+
+  const out = document.createElement('canvas');
+  out.width = out.height = EXPORT;
+  const g = out.getContext('2d');
+  g.drawImage(renderer.domElement, 0, 0);
+  const T = THEMES[theme], v = new THREE.Vector3();
+  const pr = 11 * k * Math.sqrt(zk);
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const p of pins) {
+    v.set(p.xy[0], p.xy[1], 60).project(camera);
+    if (v.z > 1) continue;
+    const x = (v.x + 1) / 2 * EXPORT, y = (1 - v.y) / 2 * EXPORT;
+    const label = p.ns.join(' · ');
+    g.font = `700 ${12 * k * Math.sqrt(zk)}px -apple-system, Helvetica, sans-serif`;
+    const w = Math.max(pr * 2, g.measureText(label).width + pr);
+    g.fillStyle = hex(T.route); g.strokeStyle = T.css.panel; g.lineWidth = 1.6 * pr / 11;
+    g.beginPath(); g.roundRect(x - w / 2, y - pr, w, pr * 2, pr); g.fill(); g.stroke();
+    g.fillStyle = T.css.panel; g.fillText(label, x, y + pr / 22);
+  }
+  g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  g.fillStyle = T.css.ink;
+  g.font = `600 ${EXPORT / 40}px 'Iowan Old Style', Palatino, Georgia, serif`;
+  g.fillText('Chicago, a South Side loop', EXPORT * 0.04, EXPORT * 0.94);
+  g.fillStyle = T.css.soft;
+  g.font = `italic ${EXPORT / 75}px 'Iowan Old Style', Palatino, Georgia, serif`;
+  g.fillText(`8 November 2026 · ${Math.round(M.miles)} miles by bike · buildings, parks and water © OpenStreetMap contributors`,
+             EXPORT * 0.04, EXPORT * 0.965);
+
+  // Put the screen back as it was.
+  camera.fov = was.fov; camera.aspect = was.aspect;
+  renderer.setPixelRatio(was.ratio);
+  renderer.setSize(innerWidth, innerHeight);
+  hatchScale(DPR);
+  for (const l of routeLines) {
+    l.material.resolution.set(innerWidth, innerHeight);
+    l.material.linewidth = l.material.userData.width;
+  }
+  frame();
+
+  out.toBlob(b => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = `south-side-loop-3d-${theme}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }, 'image/png');
+}
+document.getElementById('save').addEventListener('click', saveImage);
+window.__saveImage = saveImage;
+window.__view = (t, p) => { tween = null; controls.target.set(...t); camera.position.set(...p); controls.update(); };
+
+frame();
+homeView(true);
+window.__ready = true;
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; frame();
+  renderer.setSize(innerWidth, innerHeight); labels.setSize(innerWidth, innerHeight);
+  for (const l of routeLines) l.material.resolution.set(innerWidth, innerHeight);
+});
+
+renderer.setAnimationLoop(now => {
+  if (tween) {
+    const t = Math.min(1, (now - tween.t0) / tween.ms), e = ease(t);
+    controls.target.lerpVectors(tween.ft, tween.target, e);
+    camera.position.lerpVectors(tween.fp, tween.pos, e);
+    if (t === 1) tween = null;
+  }
+  if (play) {
+    if (!play.paused) play.elapsed += now - play.last;
+    play.last = now;
+    const t = Math.min(1, play.elapsed / play.ms);
+    const p = at(TOTAL * t);
+    for (const l of routeLines) l.geometry.instanceCount = Math.max(1, p.i + 1);
+    rider.position.set(p.x, p.y, 8);
+    rider.scale.setScalar(camera.position.distanceTo(rider.position) * 0.006);
+    if (!tween && !play.paused) {
+      // Follow the rider: slide the view so the dot stays in the middle.
+      const d = new THREE.Vector3(p.x, p.y, 0).sub(controls.target).multiplyScalar(0.06);
+      controls.target.add(d); camera.position.add(d);
+    }
+    if (t === 1 && !play.done) { play.done = true; setTimeout(stopPlay, 1200); }
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  labels.render(scene, camera);
+});
+</script>
+</body>
+</html>

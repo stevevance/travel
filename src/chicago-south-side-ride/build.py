@@ -85,6 +85,11 @@ VIA = {
     # The way home: Drexel north to 39th (Oakwood Boulevard), east over the
     # Drive to the Lakefront Trail, north to the 11th Street underpass, through
     # Grant Park to 11th, then Wabash to 8th.
+    # Off the trail at 55th and round Promontory Point on the path that hugs
+    # its shore (OSM way 1410736764, bicycle=yes), clockwise, then south again.
+    ("museumcampus", "lakefront63"): [(41.796666, -87.576745),    # north shore
+                                      (41.796173, -87.575604),    # the tip
+                                      (41.795406, -87.576452)],   # south shore
     ("drexel51", "finish"): [
             (41.813000, -87.603940),    # Drexel Blvd, northbound side
             (41.822796, -87.606108),    # Drexel & Oakwood (39th)
