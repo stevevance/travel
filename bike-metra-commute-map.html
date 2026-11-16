@@ -174,12 +174,25 @@ if (MAPBOX_KEY && !new URLSearchParams(location.search).get('nochrome')) {
      These tiles alone are fetched with the full URL as referrer, through a
      protocol of their own, rather than loosening the policy for the whole
      page and telling every other host which page this is. */
+  /* Mapbox does not answer every request alike. After the token's allowed URL
+     was changed, about one tile in ten was still refused for the referrer
+     Safari sends (the bare origin, whatever policy is asked for) while the
+     same tile asked for again came back fine. So a refusal is retried twice
+     before it counts, and `sat` keeps score for the fallback below. */
+  const sat = {ok: 0, refused: 0};
   maplibregl.addProtocol('mbsat', async (params, abort) => {
-    const r = await fetch(params.url.replace('mbsat://', 'https://'),
-                          {referrerPolicy: 'no-referrer-when-downgrade',
-                           signal: abort.signal});
-    if (!r.ok) throw new Error('satellite tile ' + r.status);
-    return {data: await r.arrayBuffer()};
+    const url = params.url.replace('mbsat://', 'https://');
+    for (let attempt = 0; ; attempt++) {
+      const r = await fetch(url + (attempt ? '&retry=' + attempt : ''),
+                            {referrerPolicy: 'no-referrer-when-downgrade',
+                             signal: abort.signal});
+      if (r.ok) { sat.ok++; return {data: await r.arrayBuffer()}; }
+      if (r.status !== 403 || attempt === 2) {
+        sat.refused++;
+        throw new Error('satellite tile ' + r.status);
+      }
+      await new Promise(done => setTimeout(done, 250 * (attempt + 1)));
+    }
   });
   kit.map.on('load', () => {
     kit.map.addSource('satellite', {
@@ -213,9 +226,12 @@ if (MAPBOX_KEY && !new URLSearchParams(location.search).get('nochrome')) {
   /* Mapbox tokens are restricted by URL, and a page served from somewhere the
      token does not allow gets a 403 for every tile - which, with a raster
      over the whole basemap, is a blank map. Go back to the map and retire
-     the button instead. */
+     the button instead - but only when nothing at all is getting through.
+     One refused tile among good ones is Mapbox being inconsistent, and
+     giving up on the first of those is what broke Safari. */
   kit.map.on('error', e => {
     if (e.sourceId !== 'satellite' || buttons[1].disabled) return;
+    if (sat.ok > 0 || sat.refused < 4) return;
     kit.map.setLayoutProperty('satellite', 'visibility', 'none');
     buttons[0].setAttribute('aria-pressed', true);
     buttons[1].setAttribute('aria-pressed', false);
