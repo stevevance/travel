@@ -17,6 +17,7 @@ a waypoint and re-running rather than hand-editing a 90 KB file.
 | `prague/` | `prague-map.html` |
 | `chicago-new-things/` | `chicago-new-things-map.html` |
 | `chicago-south-side-ride/` | `chicago-south-side-ride-map.html` |
+| `bike-metra-commute/` | `bike-metra-commute-map.html`, which the index does not link to |
 
 Each city directory holds a `template.html` with `__LINES__`/`__STOPS__`
 placeholders and a build script (`build.py`, or `build_html.py` where the
@@ -65,6 +66,14 @@ whole leg on the sidewalks instead, which it did on Ellis, 58th, Payne and
 Ellsworth. It draws arrows along the line, because the loop rides the Lakefront
 Trail both ways. Its eight pictures are an album in Photos, placed at their own
 fixes by `pick_photos.py` and captioned in `build.py`, the Bruges split.
+
+The bike and Metra commute is someone else's route, drawn by hand in three
+colours, and the only page deliberately left off the index. Its colours are
+stress rather than mode, so it passes `categoryBy: 'stress'` and its own
+palette. Its bicycle legs are the drawing map-matched with Valhalla's
+`trace_route`, not routed: a route through the drawn vertices doubled back four
+times. Both ends were cut from the drawing before it was committed, at public
+corners short of a home and a workplace, and the page names nobody.
 
 The week across Germany is the odd one out by size: seven days on one page,
 Rotterdam to Prague, with Berlin, Bonn, Leipzig and Dresden each given a zoom
