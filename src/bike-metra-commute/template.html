@@ -111,8 +111,8 @@
      station, __TRAIN__ miles on the train, and on from Route 59 by paths and
      side streets: __BIKE__ miles on the bike as far as the map goes. High
      stress is a speed limit of 35 mph or more and no bike infrastructure of
-     any kind, and that is __PCT__% of the riding shown, all of it on North
-     Aurora Road. The map starts and stops at public corners, short of both
+     any kind, and that is __PCT__% of the riding shown, in two stretches: North
+     Aurora Road and Diehl Road. The map starts and stops at public corners, short of both
      ends of the trip. The route was drawn by hand: the bicycle lines are that
      drawing snapped to the streets under it, dashed because nobody recorded
      them, and the train is the track from OpenStreetMap. The pictures are
@@ -280,7 +280,7 @@ LINES.features.forEach(f => {
    the opening frame shows the shape of the trip and nothing of the riding. */
 const parts = [
   ['chicago', 'The Chicago end', 'Harrison and Halsted, to the train.'],
-  ['aurora', 'The Aurora end', 'On from Route 59, and the high-stress stretch.'],
+  ['aurora', 'The Aurora end', 'On from Route 59, and both high-stress stretches.'],
   [null, 'The whole route', 'Both ends and the train between them.']
 ];
 const box = document.getElementById('parts');

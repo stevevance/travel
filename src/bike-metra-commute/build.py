@@ -22,8 +22,8 @@ The odd one out again, four ways:
     this.
   - It is not linked from the index, and names nobody. Neither end of the
     commute is in the data. The drawing ran from a door to a workplace; the
-    stroke from the door to Harrison Street and everything past Molitor Road
-    and Diehl Road were dropped before the file was committed, so the line
+    stroke from the door to Harrison Street and everything after the
+    high-stress stretch of Diehl Road were dropped before the file was committed, so the line
     starts at one public corner and stops at another, well short of where it
     was going. Do not put either end back.
 
@@ -87,7 +87,9 @@ STOPS = [
                   "north between houses and trees.",
                   "The signal at Pensbury Lane, looking north.")),
  dict(key="molitor", name="Molitor Road at Diehl Road",
-      note="Where the map stops, short of the end of the ride."),
+      note="Onto Diehl Road, the second stretch with nothing for a bicycle."),
+ dict(key="diehl", name="Diehl Road, where the map stops",
+      note="Short of the end of the ride."),
 ]
 for i, s_ in enumerate(STOPS):
     s_["n"] = i + 1
